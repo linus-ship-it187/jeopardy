@@ -1,48 +1,54 @@
 // ============================================================
-// JEOPARDY - FIREBASE + WEBRTC SYNCHRONISATION
+// sync.js
+// Firebase-Synchronisation + WebRTC-Kamera
+// ============================================================
+
+
+// ============================================================
+// SPIELBRETT / SPIELER
 // ============================================================
 
 function cellKey(catIndex, value) {
-  return catIndex + '_' + value;
+  return `${catIndex}_${value}`;
 }
 
 
-// ============================================================
-// SPIELER
-// ============================================================
-
-function normalizePlayers(players) {
-  if (!players) return [];
-
-  if (Array.isArray(players)) {
-    return players;
-  }
-
-  return Object.values(players);
-}
-
+// ------------------------------------------------------------
+// Spieler initialisieren
+// ------------------------------------------------------------
 
 function seedPlayersIfEmpty() {
-  db.ref('players').once('value').then(snap => {
 
-    if (!snap.exists()) {
-      db.ref('players').set(PLAYERS);
+  return db.ref("players").once("value").then(snapshot => {
+
+    if (!snapshot.exists()) {
+      return db.ref("players").set(PLAYERS);
     }
 
   }).catch(error => {
-    console.error('Fehler beim Initialisieren der Spieler:', error);
+
+    console.error(
+      "Fehler beim Initialisieren der Spieler:",
+      error
+    );
+
   });
+
 }
 
 
+// ------------------------------------------------------------
+// Spieler überwachen
+// ------------------------------------------------------------
+
 function watchPlayers(callback) {
 
-  db.ref('players').on('value', snap => {
+  db.ref("players").on("value", snapshot => {
 
-    const val = snap.val();
+    const value = snapshot.val();
 
-    if (val) {
-      callback(normalizePlayers(val));
+    if (value !== null) {
+      callback(value);
     }
 
   });
@@ -50,553 +56,1164 @@ function watchPlayers(callback) {
 }
 
 
+// ------------------------------------------------------------
+// Benutzte Spielfelder überwachen
+// ------------------------------------------------------------
+
+function watchUsedCells(callback) {
+
+  db.ref("usedCells").on("value", snapshot => {
+
+    callback(
+      snapshot.val() || {}
+    );
+
+  });
+
+}
+
+
+// ------------------------------------------------------------
+// Spieler speichern
+// ------------------------------------------------------------
+
 function savePlayers(players) {
 
-  return db.ref('players').set(players)
-    .then(() => {
-      console.log('Spieler gespeichert:', players);
-    })
+  return db.ref("players")
+    .set(players)
     .catch(error => {
 
-      console.error('Fehler beim Speichern der Spieler:', error);
+      console.error(
+        "Spieler konnten nicht gespeichert werden:",
+        error
+      );
 
       alert(
-        'Spieler konnte nicht gespeichert werden: ' +
+        "Die Spieler konnten nicht gespeichert werden.\n\n" +
         error.message
       );
 
-      throw error;
     });
 
 }
 
 
-// ============================================================
-// BENUTZTE FELDER
-// ============================================================
-
-function watchUsedCells(callback) {
-
-  db.ref('usedCells').on('value', snap => {
-
-    callback(snap.val() || {});
-
-  });
-
-}
-
+// ------------------------------------------------------------
+// Spielfeld-Feld als benutzt markieren
+// ------------------------------------------------------------
 
 function markCellUsed(catIndex, value) {
 
-  return db
-    .ref('usedCells/' + cellKey(catIndex, value))
-    .set(true);
+  return db.ref(
+    `usedCells/${cellKey(catIndex, value)}`
+  ).set(true);
 
 }
 
 
 // ============================================================
-// WEBRTC
-// ============================================================
-//
-// Firebase speichert NICHT die Kamerabilder.
-// Firebase wird nur benutzt, um WebRTC-Verbindungen
-// zwischen den Browsern aufzubauen.
-//
-// Das eigentliche Video läuft anschließend direkt
-// zwischen den Browsern.
-//
+// WEBRTC / KAMERA
 // ============================================================
 
-const RTC_CONFIG = {
-
-  iceServers: [
-
-    {
-      urls: 'stun:stun.l.google.com:19302'
-    },
-
-    {
-      urls: 'stun:stun1.l.google.com:19302'
-    }
-
-  ]
-
-};
+const WEBRTC_ROOT = "webrtc";
 
 
-let rtcClientId =
-  'client_' +
-  Math.random().toString(36).substring(2) +
-  '_' +
-  Date.now();
+// Eigene Peer-ID.
+// Bei jedem neuen Tab gibt es eine neue ID.
+const RTC_PEER_ID =
+  "peer_" +
+  Math.random()
+    .toString(36)
+    .substring(2, 10) +
+  "_" +
+  Date.now().toString(36);
 
 
 let rtcInitialized = false;
 
-let rtcIsHost = false;
+let rtcRole = "player";
 
-let rtcLocalPlayerId = null;
+let rtcPlayerId = null;
 
 let rtcLocalStream = null;
 
-let rtcPeers = new Map();
-
-let rtcClients = new Map();
-
-let rtcRemoteStreams = new Map();
-
-let rtcCallbacks = {
-
-  onRemoteStream: null,
-
-  onRemoteCameraState: null
-
-};
+let rtcPeerRef = null;
 
 
-const rtcRoot = () => db.ref('rtc');
-
-const rtcClientRef = () =>
-  db.ref('rtc/clients/' + rtcClientId);
+// Alle aktiven WebRTC-Verbindungen
+const rtcConnections = {};
 
 
-function rtcPairKey(a, b) {
+// Gespeicherte Remote-Streams
+const remoteCameraStreams = {};
 
-  return [a, b].sort().join('__');
+
+// Callback aus host.html / index.html
+let rtcRemoteStreamCallback = null;
+
+
+// Informationen über andere Peers
+const rtcPeerInfos = {};
+
+
+// ============================================================
+// HILFSFUNKTIONEN
+// ============================================================
+
+function createRtcId() {
+
+  return (
+    Math.random()
+      .toString(36)
+      .substring(2, 12) +
+    "_" +
+    Date.now().toString(36)
+  );
+
+}
+
+
+function getPairId(peerA, peerB) {
+
+  return [peerA, peerB]
+    .sort()
+    .join("__");
+
+}
+
+
+function getCandidatePath(
+  pairId,
+  sessionId,
+  peerId
+) {
+
+  return (
+    `${WEBRTC_ROOT}/candidates/` +
+    `${pairId}/` +
+    `${sessionId}/` +
+    `${peerId}`
+  );
 
 }
 
 
 // ============================================================
-// WEBRTC INITIALISIEREN
+// INIT CAMERA SYNC
 // ============================================================
 
-function initRTC(options = {}) {
+function initCameraSync(options = {}) {
 
   if (rtcInitialized) {
+
+    console.warn(
+      "initCameraSync wurde bereits ausgeführt."
+    );
+
     return;
+
   }
+
 
   rtcInitialized = true;
 
-  rtcIsHost = !!options.isHost;
 
-  rtcCallbacks.onRemoteStream =
-    options.onRemoteStream || null;
-
-  rtcCallbacks.onRemoteCameraState =
-    options.onRemoteCameraState || null;
+  rtcRole =
+    options.role || "player";
 
 
-  // Eigene Anwesenheit bei Firebase anmelden
-
-  const ownData = {
-
-    host: rtcIsHost,
-
-    playerId: null,
-
-    cameraOn: false,
-
-    joinedAt: firebase.database.ServerValue.TIMESTAMP
-
-  };
+  rtcPlayerId =
+    options.playerId !== undefined
+      ? options.playerId
+      : null;
 
 
-  rtcClientRef().set(ownData);
+  rtcRemoteStreamCallback =
+    typeof options.onRemoteStream === "function"
+      ? options.onRemoteStream
+      : null;
 
 
-  // Beim Verlassen automatisch aus der Liste entfernen
-
-  rtcClientRef().onDisconnect().remove();
-
-
-  // Alle anderen Browser beobachten
-
-  db.ref('rtc/clients').on('value', snap => {
-
-    const clients = snap.val() || {};
-
-    handleRTCClients(clients);
-
-  });
-
-}
-
-
-// ============================================================
-// CLIENT-LISTE VERARBEITEN
-// ============================================================
-
-function handleRTCClients(clients) {
-
-  const currentIds = new Set(
-    Object.keys(clients)
+  console.log(
+    "WebRTC wird gestartet:",
+    {
+      peerId: RTC_PEER_ID,
+      role: rtcRole,
+      playerId: rtcPlayerId
+    }
   );
 
 
-  // Neue / bestehende Clients
+  // ----------------------------------------------------------
+  // Eigenen Peer bei Firebase anmelden
+  // ----------------------------------------------------------
 
-  Object.entries(clients).forEach(([clientId, data]) => {
+  rtcPeerRef =
+    db.ref(
+      `${WEBRTC_ROOT}/peers/${RTC_PEER_ID}`
+    );
 
-    if (clientId === rtcClientId) {
-      return;
+
+  const peerInfo = {
+
+    role: rtcRole,
+
+    playerId:
+      rtcPlayerId !== null &&
+      rtcPlayerId !== undefined
+        ? String(rtcPlayerId)
+        : null,
+
+    online: true,
+
+    createdAt:
+      firebase.database.ServerValue.TIMESTAMP
+
+  };
+
+
+  rtcPeerRef.set(peerInfo)
+    .then(() => {
+
+      console.log(
+        "WebRTC-Peer bei Firebase angemeldet."
+      );
+
+    })
+    .catch(error => {
+
+      console.error(
+        "WebRTC-Peer konnte nicht angemeldet werden:",
+        error
+      );
+
+    });
+
+
+  // Beim Verlassen automatisch löschen
+  rtcPeerRef
+    .onDisconnect()
+    .remove();
+
+
+  // ----------------------------------------------------------
+  // Andere Peers überwachen
+  // ----------------------------------------------------------
+
+  db.ref(`${WEBRTC_ROOT}/peers`).on(
+    "value",
+    snapshot => {
+
+      const peers =
+        snapshot.val() || {};
+
+
+      Object.entries(peers).forEach(
+        ([remotePeerId, remoteInfo]) => {
+
+          if (
+            remotePeerId === RTC_PEER_ID
+          ) {
+            return;
+          }
+
+
+          rtcPeerInfos[remotePeerId] =
+            remoteInfo;
+
+
+          /*
+           * Verbindung existiert bereits.
+           * Nur die Informationen aktualisieren.
+           */
+          if (
+            rtcConnections[remotePeerId]
+          ) {
+
+            rtcConnections[
+              remotePeerId
+            ].remoteInfo = remoteInfo;
+
+            return;
+
+          }
+
+
+          console.log(
+            "Neuer Peer gefunden:",
+            remotePeerId,
+            remoteInfo
+          );
+
+
+          createRtcConnection(
+            remotePeerId,
+            remoteInfo
+          );
+
+        }
+      );
+
+
+      // ------------------------------------------------------
+      // Verbindungen zu verschwundenen Peers schließen
+      // ------------------------------------------------------
+
+      Object.keys(
+        rtcConnections
+      ).forEach(remotePeerId => {
+
+        if (
+          !peers[remotePeerId]
+        ) {
+
+          closeRtcConnection(
+            remotePeerId
+          );
+
+        }
+
+      });
+
     }
-
-    rtcClients.set(clientId, data);
-
-    ensureRTCPeer(clientId, data);
-
-  });
+  );
 
 
-  // Clients, die verschwunden sind
+  // ----------------------------------------------------------
+  // Eigene Verbindung beim Schließen aufräumen
+  // ----------------------------------------------------------
 
-  for (const [clientId] of rtcPeers) {
+  window.addEventListener(
+    "beforeunload",
+    () => {
 
-    if (!currentIds.has(clientId)) {
+      Object.keys(
+        rtcConnections
+      ).forEach(remotePeerId => {
 
-      closeRTCPeer(clientId);
+        closeRtcConnection(
+          remotePeerId
+        );
+
+      });
 
     }
-
-  }
+  );
 
 }
 
 
 // ============================================================
-// PEER VERBINDUNG ERSTELLEN
+// WEBRTC VERBINDUNG ERSTELLEN
 // ============================================================
 
-async function ensureRTCPeer(remoteClientId, remoteData) {
+async function createRtcConnection(
+  remotePeerId,
+  remoteInfo
+) {
 
-  if (rtcPeers.has(remoteClientId)) {
+  // Bereits vorhanden
+  if (
+    rtcConnections[remotePeerId]
+  ) {
 
-    const existing =
-      rtcPeers.get(remoteClientId);
-
-    existing.remotePlayerId =
-      remoteData.playerId != null
-        ? Number(remoteData.playerId)
-        : null;
-
-    return;
+    return rtcConnections[
+      remotePeerId
+    ].pc;
 
   }
 
 
-  const pairKey =
-    rtcPairKey(rtcClientId, remoteClientId);
-
-
-  const isCaller =
-    rtcClientId < remoteClientId;
+  console.log(
+    "Erstelle WebRTC-Verbindung zu:",
+    remotePeerId
+  );
 
 
   const pc =
-    new RTCPeerConnection(RTC_CONFIG);
+    new RTCPeerConnection({
 
+      iceServers: [
 
-  // Video-Kanal von Anfang an anlegen.
-  // Dadurch brauchen wir später keine neue
-  // SDP-Verhandlung, wenn die Kamera eingeschaltet wird.
+        {
+          urls: [
+            "stun:stun.l.google.com:19302"
+          ]
+        },
 
-  const videoTransceiver =
-    pc.addTransceiver('video', {
-      direction: 'sendrecv'
+        {
+          urls: [
+            "stun:stun1.l.google.com:19302"
+          ]
+        }
+
+      ]
+
     });
 
 
-  const peer = {
+  const pairId =
+    getPairId(
+      RTC_PEER_ID,
+      remotePeerId
+    );
+
+
+  const isInitiator =
+    RTC_PEER_ID < remotePeerId;
+
+
+  const connection = {
 
     pc: pc,
 
-    remotePlayerId:
-      remoteData.playerId != null
-        ? Number(remoteData.playerId)
-        : null,
+    remoteInfo: remoteInfo,
 
-    isCaller: isCaller,
+    pairId: pairId,
 
-    videoTransceiver: videoTransceiver,
+    sessionId: null,
 
-    pendingCandidates: [],
+    isInitiator: isInitiator,
 
     remoteDescriptionSet: false,
 
-    offerListener: null,
+    pendingCandidates: [],
 
-    answerListener: null,
+    candidateListenerRef: null,
 
-    callerCandidateListener: null,
-
-    calleeCandidateListener: null
+    signalListenerRef: null
 
   };
 
 
-  rtcPeers.set(remoteClientId, peer);
+  rtcConnections[
+    remotePeerId
+  ] = connection;
 
 
-  // ----------------------------------------------------------
-  // ICE-Kandidaten
-  // ----------------------------------------------------------
+  // ==========================================================
+  // VIDEO-TRANSCEIVER
+  // ==========================================================
 
-  pc.onicecandidate = event => {
+  /*
+   * Ganz wichtig:
+   *
+   * Wir erstellen die Video-Verbindung schon beim
+   * Verbindungsaufbau.
+   *
+   * Dadurch kann später startLocalCamera() einfach
+   * replaceTrack() benutzen.
+   */
 
-    if (!event.candidate) {
-      return;
+  let videoTransceiver;
+
+  try {
+
+    videoTransceiver =
+      pc.addTransceiver(
+        "video",
+        {
+          direction: "sendrecv"
+        }
+      );
+
+  } catch (error) {
+
+    console.error(
+      "Video-Transceiver konnte nicht erstellt werden:",
+      error
+    );
+
+  }
+
+
+  connection.videoTransceiver =
+    videoTransceiver;
+
+
+  // ==========================================================
+  // FALLS KAMERA BEREITS AKTIV IST
+  // ==========================================================
+
+  if (
+    rtcLocalStream &&
+    videoTransceiver
+  ) {
+
+    const track =
+      rtcLocalStream.getVideoTracks()[0];
+
+
+    if (track) {
+
+      try {
+
+        await videoTransceiver
+          .sender
+          .replaceTrack(track);
+
+      } catch (error) {
+
+        console.error(
+          "Lokaler Video-Track konnte nicht gesetzt werden:",
+          error
+        );
+
+      }
+
     }
 
-    const candidatePath =
-      isCaller
-        ? 'callerCandidates'
-        : 'calleeCandidates';
+  }
 
 
+  // ==========================================================
+  // REMOTE VIDEO
+  // ==========================================================
+
+  pc.ontrack = event => {
+
+    console.log(
+      "Remote-Kamera empfangen von:",
+      remotePeerId
+    );
+
+
+    let stream;
+
+
+    /*
+     * Normalerweise liefert WebRTC event.streams[0].
+     *
+     * Falls der Browser keine Stream-ID liefert,
+     * erstellen wir selbst einen MediaStream.
+     */
+
+    if (
+      event.streams &&
+      event.streams.length > 0
+    ) {
+
+      stream =
+        event.streams[0];
+
+    } else {
+
+      stream =
+        new MediaStream([
+          event.track
+        ]);
+
+    }
+
+
+    remoteCameraStreams[
+      remotePeerId
+    ] = stream;
+
+
+    /*
+     * Informationen des Spielers/Hosts
+     * an die HTML-Seite weitergeben.
+     */
+
+    const info =
+      rtcConnections[
+        remotePeerId
+      ]
+        ? rtcConnections[
+            remotePeerId
+          ].remoteInfo
+        : rtcPeerInfos[
+            remotePeerId
+          ];
+
+
+    if (
+      rtcRemoteStreamCallback
+    ) {
+
+      rtcRemoteStreamCallback(
+        info || {},
+        stream
+      );
+
+    }
+
+
+    event.track.onended =
+      () => {
+
+        console.log(
+          "Remote-Kamera beendet:",
+          remotePeerId
+        );
+
+        delete remoteCameraStreams[
+          remotePeerId
+        ];
+
+      };
+
+  };
+
+
+  // ==========================================================
+  // ICE-KANDIDATEN
+  // ==========================================================
+
+  pc.onicecandidate =
+    event => {
+
+      if (
+        !event.candidate ||
+        !connection.sessionId
+      ) {
+
+        return;
+
+      }
+
+
+      const candidateRef =
+        db.ref(
+          getCandidatePath(
+            pairId,
+            connection.sessionId,
+            RTC_PEER_ID
+          )
+        );
+
+
+      candidateRef.push(
+        event.candidate.toJSON()
+      )
+      .catch(error => {
+
+        console.error(
+          "ICE-Kandidat konnte nicht gespeichert werden:",
+          error
+        );
+
+      });
+
+    };
+
+
+  // ==========================================================
+  // CONNECTION STATE
+  // ==========================================================
+
+  pc.onconnectionstatechange =
+    () => {
+
+      console.log(
+        `WebRTC ${remotePeerId}:`,
+        pc.connectionState
+      );
+
+
+      if (
+        pc.connectionState ===
+          "failed" ||
+        pc.connectionState ===
+          "closed" ||
+        pc.connectionState ===
+          "disconnected"
+      ) {
+
+        /*
+         * Bei disconnected nicht sofort löschen,
+         * weil die Verbindung sich oft wieder fängt.
+         */
+
+        if (
+          pc.connectionState ===
+          "failed"
+        ) {
+
+          closeRtcConnection(
+            remotePeerId
+          );
+
+        }
+
+      }
+
+    };
+
+
+  // ==========================================================
+  // INITIATOR
+  // ==========================================================
+
+  if (isInitiator) {
+
+    await startRtcOffer(
+      remotePeerId,
+      connection
+    );
+
+  } else {
+
+    waitForRtcOffer(
+      remotePeerId,
+      connection
+    );
+
+  }
+
+
+  return pc;
+
+}
+
+
+// ============================================================
+// ANGEBOT ERSTELLEN
+// ============================================================
+
+async function startRtcOffer(
+  remotePeerId,
+  connection
+) {
+
+  const pc =
+    connection.pc;
+
+
+  const signalRef =
     db.ref(
-      'rtc/connections/' +
-      pairKey +
-      '/' +
-      candidatePath
-    ).push({
+      `${WEBRTC_ROOT}/signals/` +
+      connection.pairId
+    );
 
-      candidate:
-        event.candidate.toJSON
-          ? event.candidate.toJSON()
-          : event.candidate,
+
+  /*
+   * Jede neue Verbindung bekommt eine neue Session.
+   */
+
+  const sessionId =
+    createRtcId();
+
+
+  connection.sessionId =
+    sessionId;
+
+
+  console.log(
+    "Erstelle WebRTC-Angebot:",
+    remotePeerId,
+    sessionId
+  );
+
+
+  try {
+
+    const offer =
+      await pc.createOffer();
+
+
+    await pc.setLocalDescription(
+      offer
+    );
+
+
+    await signalRef.set({
+
+      sessionId: sessionId,
+
+      offer: {
+        type: offer.type,
+        sdp: offer.sdp
+      },
+
+      offerFrom:
+        RTC_PEER_ID,
 
       createdAt:
         firebase.database.ServerValue.TIMESTAMP
 
     });
 
-  };
+
+    /*
+     * Signal beim Trennen löschen.
+     */
+
+    signalRef
+      .onDisconnect()
+      .remove();
 
 
-  // ----------------------------------------------------------
-  // EINGEHENDES VIDEO
-  // ----------------------------------------------------------
+    /*
+     * Auf Antwort warten.
+     */
 
-  pc.ontrack = event => {
+    connection.signalListenerRef =
+      signalRef.on(
+        "value",
+        async snapshot => {
 
-    let stream =
-      rtcRemoteStreams.get(remoteClientId);
+          const data =
+            snapshot.val();
 
 
-    if (!stream) {
+          if (!data) {
+            return;
+          }
 
-      stream = new MediaStream();
 
-      rtcRemoteStreams.set(
-        remoteClientId,
-        stream
+          if (
+            data.sessionId !==
+            connection.sessionId
+          ) {
+
+            return;
+
+          }
+
+
+          if (
+            data.answer &&
+            !connection.remoteDescriptionSet
+          ) {
+
+            try {
+
+              await pc.setRemoteDescription(
+                new RTCSessionDescription(
+                  data.answer
+                )
+              );
+
+
+              connection.remoteDescriptionSet =
+                true;
+
+
+              await flushPendingCandidates(
+                connection
+              );
+
+
+              console.log(
+                "WebRTC-Antwort erhalten:",
+                remotePeerId
+              );
+
+            } catch (error) {
+
+              console.error(
+                "Fehler beim Setzen der WebRTC-Antwort:",
+                error
+              );
+
+            }
+
+          }
+
+        }
       );
 
-    }
 
+    /*
+     * Auf ICE-Kandidaten des anderen Peers hören.
+     */
 
-    if (
-      !stream
-        .getTracks()
-        .some(track => track.id === event.track.id)
-    ) {
-
-      stream.addTrack(event.track);
-
-    }
-
-
-    const currentPeer =
-      rtcPeers.get(remoteClientId);
-
-
-    const playerId =
-      currentPeer
-        ? currentPeer.remotePlayerId
-        : null;
-
-
-    if (
-      playerId != null &&
-      rtcCallbacks.onRemoteStream
-    ) {
-
-      rtcCallbacks.onRemoteStream(
-        playerId,
-        stream
-      );
-
-    }
-
-
-    event.track.onended = () => {
-
-      // Stream nicht sofort löschen,
-      // weil WebRTC Tracks neu erscheinen können.
-
-    };
-
-  };
-
-
-  // ----------------------------------------------------------
-  // VERBINDUNGSSTATUS
-  // ----------------------------------------------------------
-
-  pc.onconnectionstatechange = () => {
-
-    console.log(
-      'WebRTC',
-      remoteClientId,
-      pc.connectionState
+    listenForRtcCandidates(
+      remotePeerId,
+      connection
     );
 
 
-    if (
-      pc.connectionState === 'failed' ||
-      pc.connectionState === 'closed'
-    ) {
+  } catch (error) {
 
-      closeRTCPeer(remoteClientId);
-
-    }
-
-  };
-
-
-  // ----------------------------------------------------------
-  // SIGNALING
-  // ----------------------------------------------------------
-
-  if (isCaller) {
-
-    listenForAnswer(
-      remoteClientId,
-      pairKey,
-      peer
-    );
-
-  } else {
-
-    listenForOffer(
-      remoteClientId,
-      pairKey,
-      peer
+    console.error(
+      "Fehler beim Erstellen des WebRTC-Angebots:",
+      error
     );
 
   }
 
-
-  // ICE vom anderen Browser
-
-  const remoteCandidatePath =
-    isCaller
-      ? 'calleeCandidates'
-      : 'callerCandidates';
+}
 
 
-  const candidateRef =
+// ============================================================
+// AUF ANGEBOT WARTEN
+// ============================================================
+
+function waitForRtcOffer(
+  remotePeerId,
+  connection
+) {
+
+  const signalRef =
     db.ref(
-      'rtc/connections/' +
-      pairKey +
-      '/' +
-      remoteCandidatePath
+      `${WEBRTC_ROOT}/signals/` +
+      connection.pairId
     );
 
 
-  peer.remoteCandidateListener =
-    candidateRef.on('child_added', async snap => {
+  connection.signalListenerRef =
+    signalRef.on(
+      "value",
+      async snapshot => {
 
-      const value = snap.val();
-
-      if (!value || !value.candidate) {
-        return;
-      }
+        const data =
+          snapshot.val();
 
 
-      const candidate =
-        new RTCIceCandidate(
-          value.candidate
+        if (!data) {
+          return;
+        }
+
+
+        if (
+          !data.offer ||
+          !data.sessionId
+        ) {
+
+          return;
+
+        }
+
+
+        /*
+         * Bereits bearbeitete Session ignorieren.
+         */
+
+        if (
+          connection.sessionId ===
+          data.sessionId &&
+          connection.remoteDescriptionSet
+        ) {
+
+          return;
+
+        }
+
+
+        connection.sessionId =
+          data.sessionId;
+
+
+        console.log(
+          "WebRTC-Angebot erhalten:",
+          remotePeerId,
+          connection.sessionId
         );
 
 
-      if (peer.remoteDescriptionSet) {
-
         try {
 
-          await pc.addIceCandidate(candidate);
+          const pc =
+            connection.pc;
+
+
+          await pc.setRemoteDescription(
+            new RTCSessionDescription(
+              data.offer
+            )
+          );
+
+
+          connection.remoteDescriptionSet =
+            true;
+
+
+          await flushPendingCandidates(
+            connection
+          );
+
+
+          const answer =
+            await pc.createAnswer();
+
+
+          await pc.setLocalDescription(
+            answer
+          );
+
+
+          await signalRef.update({
+
+            answer: {
+
+              type:
+                answer.type,
+
+              sdp:
+                answer.sdp
+
+            },
+
+            answerFrom:
+              RTC_PEER_ID
+
+          });
+
+
+          signalRef
+            .onDisconnect()
+            .remove();
+
+
+          listenForRtcCandidates(
+            remotePeerId,
+            connection
+          );
+
+
+          console.log(
+            "WebRTC-Antwort gesendet:",
+            remotePeerId
+          );
+
 
         } catch (error) {
 
-          console.warn(
-            'ICE-Kandidat konnte nicht hinzugefügt werden:',
+          console.error(
+            "Fehler bei WebRTC-Angebot:",
             error
           );
 
         }
 
-      } else {
+      }
+    );
 
-        peer.pendingCandidates.push(
+}
+
+
+// ============================================================
+// ICE-KANDIDATEN EMPFANGEN
+// ============================================================
+
+function listenForRtcCandidates(
+  remotePeerId,
+  connection
+) {
+
+  if (
+    !connection.sessionId
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    connection.candidateListenerRef
+  ) {
+
+    return;
+
+  }
+
+
+  const candidateRef =
+    db.ref(
+      getCandidatePath(
+        connection.pairId,
+        connection.sessionId,
+        remotePeerId
+      )
+    );
+
+
+  connection.candidateListenerRef =
+    candidateRef.on(
+      "child_added",
+      async snapshot => {
+
+        const candidate =
+          snapshot.val();
+
+
+        if (!candidate) {
+          return;
+        }
+
+
+        try {
+
+          const iceCandidate =
+            new RTCIceCandidate(
+              candidate
+            );
+
+
+          if (
+            connection.remoteDescriptionSet
+          ) {
+
+            await connection.pc
+              .addIceCandidate(
+                iceCandidate
+              );
+
+          } else {
+
+            connection.pendingCandidates
+              .push(
+                iceCandidate
+              );
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            "ICE-Kandidat konnte nicht hinzugefügt werden:",
+            error
+          );
+
+        }
+
+      }
+    );
+
+}
+
+
+// ============================================================
+// WARTENDE ICE-KANDIDATEN ABARBEITEN
+// ============================================================
+
+async function flushPendingCandidates(
+  connection
+) {
+
+  if (
+    !connection.remoteDescriptionSet
+  ) {
+
+    return;
+
+  }
+
+
+  const candidates =
+    connection.pendingCandidates
+      .splice(0);
+
+
+  for (
+    const candidate of candidates
+  ) {
+
+    try {
+
+      await connection.pc
+        .addIceCandidate(
           candidate
         );
 
-      }
-
-    });
-
-
-  // ----------------------------------------------------------
-  // CALLER ERSTELLT ANGEBOT
-  // ----------------------------------------------------------
-
-  if (isCaller) {
-
-    try {
-
-      const offerRef =
-        db.ref(
-          'rtc/connections/' +
-          pairKey +
-          '/offer'
-        );
-
-
-      const existingOffer =
-        await offerRef.once('value');
-
-
-      if (!existingOffer.exists()) {
-
-        const offer =
-          await pc.createOffer();
-
-
-        await pc.setLocalDescription(
-          offer
-        );
-
-
-        await offerRef.set({
-
-          type: offer.type,
-
-          sdp: offer.sdp,
-
-          createdAt:
-            firebase.database.ServerValue.TIMESTAMP
-
-        });
-
-      }
-
     } catch (error) {
 
       console.error(
-        'WebRTC Offer Fehler:',
+        "Gespeicherter ICE-Kandidat konnte nicht hinzugefügt werden:",
         error
       );
 
@@ -608,322 +1225,40 @@ async function ensureRTCPeer(remoteClientId, remoteData) {
 
 
 // ============================================================
-// OFFER EMPFANGEN
+// VERBINDUNG SCHLIESSEN
 // ============================================================
 
-function listenForOffer(
-  remoteClientId,
-  pairKey,
-  peer
+function closeRtcConnection(
+  remotePeerId
 ) {
 
-  const offerRef =
-    db.ref(
-      'rtc/connections/' +
-      pairKey +
-      '/offer'
-    );
+  const connection =
+    rtcConnections[
+      remotePeerId
+    ];
 
 
-  peer.offerListener =
-    offerRef.on('value', async snap => {
-
-      const offer = snap.val();
-
-      if (!offer) {
-        return;
-      }
-
-
-      if (peer.pc.remoteDescription) {
-        return;
-      }
-
-
-      try {
-
-        await peer.pc.setRemoteDescription(
-          new RTCSessionDescription({
-            type: offer.type,
-            sdp: offer.sdp
-          })
-        );
-
-
-        peer.remoteDescriptionSet = true;
-
-
-        await flushPendingCandidates(
-          peer
-        );
-
-
-        const answer =
-          await peer.pc.createAnswer();
-
-
-        await peer.pc.setLocalDescription(
-          answer
-        );
-
-
-        await db.ref(
-          'rtc/connections/' +
-          pairKey +
-          '/answer'
-        ).set({
-
-          type: answer.type,
-
-          sdp: answer.sdp,
-
-          createdAt:
-            firebase.database.ServerValue.TIMESTAMP
-
-        });
-
-      } catch (error) {
-
-        console.error(
-          'WebRTC Offer Fehler:',
-          error
-        );
-
-      }
-
-    });
-
-}
-
-
-// ============================================================
-// ANSWER EMPFANGEN
-// ============================================================
-
-function listenForAnswer(
-  remoteClientId,
-  pairKey,
-  peer
-) {
-
-  const answerRef =
-    db.ref(
-      'rtc/connections/' +
-      pairKey +
-      '/answer'
-    );
-
-
-  peer.answerListener =
-    answerRef.on('value', async snap => {
-
-      const answer = snap.val();
-
-      if (!answer) {
-        return;
-      }
-
-
-      if (peer.pc.remoteDescription) {
-        return;
-      }
-
-
-      try {
-
-        await peer.pc.setRemoteDescription(
-          new RTCSessionDescription({
-            type: answer.type,
-            sdp: answer.sdp
-          })
-        );
-
-
-        peer.remoteDescriptionSet = true;
-
-
-        await flushPendingCandidates(
-          peer
-        );
-
-      } catch (error) {
-
-        console.error(
-          'WebRTC Answer Fehler:',
-          error
-        );
-
-      }
-
-    });
-
-}
-
-
-// ============================================================
-// GESPEICHERTE ICE-KANDIDATEN NACHLADEN
-// ============================================================
-
-async function flushPendingCandidates(peer) {
-
-  const candidates =
-    peer.pendingCandidates.splice(0);
-
-
-  for (const candidate of candidates) {
-
-    try {
-
-      await peer.pc.addIceCandidate(
-        candidate
-      );
-
-    } catch (error) {
-
-      console.warn(
-        'Gespeicherter ICE-Kandidat Fehler:',
-        error
-      );
-
-    }
-
-  }
-
-}
-
-
-// ============================================================
-// LOKALE KAMERA STARTEN
-// ============================================================
-
-async function setLocalCameraStream(
-  playerId,
-  stream
-) {
-
-  rtcLocalPlayerId =
-    Number(playerId);
-
-
-  rtcLocalStream =
-    stream;
-
-
-  // Firebase mitteilen,
-  // welcher Spieler diese Kamera sendet.
-
-  await rtcClientRef().update({
-
-    playerId:
-      rtcLocalPlayerId,
-
-    cameraOn: true
-
-  });
-
-
-  // Kamera an alle bestehenden Verbindungen senden
-
-  for (const peer of rtcPeers.values()) {
-
-    try {
-
-      const sender =
-        peer.videoTransceiver.sender;
-
-
-      await sender.replaceTrack(
-        stream.getVideoTracks()[0] || null
-      );
-
-    } catch (error) {
-
-      console.error(
-        'Kamera konnte an Peer gesendet werden:',
-        error
-      );
-
-    }
-
-  }
-
-}
-
-
-// ============================================================
-// LOKALE KAMERA STOPPEN
-// ============================================================
-
-async function stopLocalCamera() {
-
-  if (rtcLocalStream) {
-
-    rtcLocalStream
-      .getTracks()
-      .forEach(track => track.stop());
-
-  }
-
-
-  rtcLocalStream = null;
-
-
-  for (const peer of rtcPeers.values()) {
-
-    try {
-
-      await peer.videoTransceiver
-        .sender
-        .replaceTrack(null);
-
-    } catch (error) {
-
-      console.warn(
-        'Kamera konnte nicht getrennt werden:',
-        error
-      );
-
-    }
-
-  }
-
-
-  rtcLocalPlayerId = null;
-
-
-  if (rtcInitialized) {
-
-    await rtcClientRef().update({
-
-      playerId: null,
-
-      cameraOn: false
-
-    });
-
-  }
-
-}
-
-
-// ============================================================
-// PEER SCHLIESSEN
-// ============================================================
-
-function closeRTCPeer(remoteClientId) {
-
-  const peer =
-    rtcPeers.get(remoteClientId);
-
-
-  if (!peer) {
+  if (!connection) {
     return;
   }
 
 
+  console.log(
+    "Schließe WebRTC-Verbindung:",
+    remotePeerId
+  );
+
+
   try {
 
-    peer.pc.close();
+    if (
+      connection.signalListenerRef
+    ) {
+
+      connection.signalListenerRef
+        .off();
+
+    }
 
   } catch (error) {
 
@@ -932,37 +1267,295 @@ function closeRTCPeer(remoteClientId) {
   }
 
 
-  rtcPeers.delete(
-    remoteClientId
+  try {
+
+    if (
+      connection.candidateListenerRef
+    ) {
+
+      connection.candidateListenerRef
+        .off();
+
+    }
+
+  } catch (error) {
+
+    console.warn(error);
+
+  }
+
+
+  try {
+
+    connection.pc.close();
+
+  } catch (error) {
+
+    console.warn(error);
+
+  }
+
+
+  delete rtcConnections[
+    remotePeerId
+  ];
+
+
+  delete remoteCameraStreams[
+    remotePeerId
+  ];
+
+}
+
+
+// ============================================================
+// LOKALE KAMERA STARTEN
+// ============================================================
+
+async function startLocalCamera(
+  suppliedStream = null
+) {
+
+  console.log(
+    "startLocalCamera()"
   );
 
 
-  rtcClients.delete(
-    remoteClientId
-  );
+  /*
+   * Wenn host.html/index.html bereits
+   * getUserMedia() gemacht hat, verwenden
+   * wir diesen Stream.
+   */
 
+  if (suppliedStream) {
 
-  rtcRemoteStreams.delete(
-    remoteClientId
-  );
+    rtcLocalStream =
+      suppliedStream;
 
+  } else {
 
-  if (
-    rtcCallbacks.onRemoteCameraState
-  ) {
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
 
-    const playerId =
-      peer.remotePlayerId;
-
-
-    if (playerId != null) {
-
-      rtcCallbacks.onRemoteCameraState(
-        playerId,
-        false
+      throw new Error(
+        "Kamerazugriff wird von diesem Browser nicht unterstützt."
       );
 
     }
+
+
+    /*
+     * Kamera benötigt HTTPS oder localhost.
+     */
+
+    if (
+      !window.isSecureContext &&
+      location.hostname !== "localhost"
+    ) {
+
+      throw new Error(
+        "Kamera funktioniert nur über HTTPS oder localhost."
+      );
+
+    }
+
+
+    rtcLocalStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: true,
+
+        audio: false
+
+      });
+
+  }
+
+
+  const track =
+    rtcLocalStream.getVideoTracks()[0];
+
+
+  if (!track) {
+
+    throw new Error(
+      "Der Kamerastream enthält keinen Videotrack."
+    );
+
+  }
+
+
+  console.log(
+    "Lokale Kamera gestartet."
+  );
+
+
+  /*
+   * Kamera an ALLE bereits bestehenden
+   * WebRTC-Verbindungen übergeben.
+   */
+
+  const replacements =
+    Object.entries(
+      rtcConnections
+    ).map(
+      async ([remotePeerId, connection]) => {
+
+        if (
+          !connection.videoTransceiver
+        ) {
+
+          return;
+
+        }
+
+
+        try {
+
+          await connection
+            .videoTransceiver
+            .sender
+            .replaceTrack(track);
+
+
+          console.log(
+            "Kamera an Peer gesendet:",
+            remotePeerId
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Kamera konnte nicht an Peer gesendet werden:",
+            remotePeerId,
+            error
+          );
+
+        }
+
+      }
+    );
+
+
+  await Promise.all(
+    replacements
+  );
+
+
+  return rtcLocalStream;
+
+}
+
+
+// ============================================================
+// LOKALE KAMERA STOPPEN
+// ============================================================
+
+function stopLocalCamera() {
+
+  console.log(
+    "stopLocalCamera()"
+  );
+
+
+  /*
+   * Track aus allen WebRTC-Verbindungen entfernen.
+   */
+
+  Object.entries(
+    rtcConnections
+  ).forEach(
+    ([remotePeerId, connection]) => {
+
+      if (
+        connection.videoTransceiver
+      ) {
+
+        connection
+          .videoTransceiver
+          .sender
+          .replaceTrack(null)
+          .catch(error => {
+
+            console.warn(
+              "Video-Track konnte nicht entfernt werden:",
+              remotePeerId,
+              error
+            );
+
+          });
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Lokale Kamera stoppen.
+   */
+
+  if (rtcLocalStream) {
+
+    rtcLocalStream
+      .getTracks()
+      .forEach(track => {
+
+        track.stop();
+
+      });
+
+  }
+
+
+  rtcLocalStream =
+    null;
+
+
+  console.log(
+    "Lokale Kamera gestoppt."
+  );
+
+}
+
+
+// ============================================================
+// LOKALEN PLAYER ÄNDERN
+// ============================================================
+
+function setCameraPlayerId(
+  playerId
+) {
+
+  rtcPlayerId =
+    playerId !== null &&
+    playerId !== undefined
+      ? String(playerId)
+      : null;
+
+
+  if (
+    rtcPeerRef
+  ) {
+
+    rtcPeerRef
+      .update({
+
+        playerId:
+          rtcPlayerId
+
+      })
+      .catch(error => {
+
+        console.error(
+          "Spieler-ID konnte nicht aktualisiert werden:",
+          error
+        );
+
+      });
 
   }
 
@@ -970,7 +1563,90 @@ function closeRTCPeer(remoteClientId) {
 
 
 // ============================================================
-// WEBRTC HILFSFUNKTIONEN FÜR DIE UI
+// REMOTE CAMERA STREAM ABFRAGEN
+// ============================================================
+
+function getRemoteCameraStream(
+  playerId
+) {
+
+  const wantedId =
+    String(playerId);
+
+
+  /*
+   * Erst direkt über Peer-IDs suchen.
+   */
+
+  for (
+    const [peerId, info]
+    of Object.entries(rtcPeerInfos)
+  ) {
+
+    if (
+      info &&
+      info.role === "player" &&
+      String(info.playerId) === wantedId
+    ) {
+
+      if (
+        remoteCameraStreams[peerId]
+      ) {
+
+        return remoteCameraStreams[
+          peerId
+        ];
+
+      }
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+// ============================================================
+// REMOTE HOST STREAM
+// ============================================================
+
+function getRemoteHostCameraStream() {
+
+  for (
+    const [peerId, info]
+    of Object.entries(rtcPeerInfos)
+  ) {
+
+    if (
+      info &&
+      info.role === "host"
+    ) {
+
+      if (
+        remoteCameraStreams[peerId]
+      ) {
+
+        return remoteCameraStreams[
+          peerId
+        ];
+
+      }
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+// ============================================================
+// LOKALEN STREAM ABFRAGEN
 // ============================================================
 
 function getLocalCameraStream() {
@@ -980,8 +1656,24 @@ function getLocalCameraStream() {
 }
 
 
-function getLocalCameraPlayerId() {
+// ============================================================
+// DEBUG
+// ============================================================
 
-  return rtcLocalPlayerId;
+console.log(
+  "sync.js geladen – WebRTC-Funktionen verfügbar:",
+  {
+    initCameraSync:
+      typeof initCameraSync,
 
-}
+    startLocalCamera:
+      typeof startLocalCamera,
+
+    stopLocalCamera:
+      typeof stopLocalCamera,
+
+    getRemoteCameraStream:
+      typeof getRemoteCameraStream
+
+  }
+);
