@@ -1,5 +1,5 @@
 // ---- Hier die eigenen Kategorien & Fragen eintragen ----
-const DATA = [
+export const DATA = [
   {
     category: "Zurück in die Schule",
     questions: {
@@ -52,12 +52,12 @@ const DATA = [
   }
 ];
 
-const VALUES = [100, 200, 300, 400, 500];
+export const VALUES = [100, 200, 300, 400, 500];
 
 // Ausgangs-Spielerliste. Wird nur EINMALIG in die Datenbank geschrieben,
 // falls dort noch keine Spieler existieren (siehe sync.js: seedPlayersIfEmpty).
 // Danach ist die Datenbank die "Wahrheit" — Namen/Punkte änderst du auf host.html.
-let PLAYERS = [
+export let PLAYERS = [
   { id: 1, name: 'Niek', score: 0 },
   { id: 2, name: 'Basti', score: 0 },
   { id: 3, name: 'Kevin', score: 0 }
