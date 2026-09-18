@@ -8,11 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
-
 <title>Jeopardy — Host</title>
-
-
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 
@@ -20,11 +16,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-
-
 <link rel="stylesheet" href="shared.css">
-
-
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 
@@ -32,61 +24,23 @@
 
 </head>
 
-
-
 <body>
 
 
 
-  <!-- HEADER -->
-
   <div class="header">
 
-    <svg viewBox="0 0 24 24" fill="currentColor">
-
-      <path
-
-        d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z"
-
-        transform="translate(1.4)"
-
-      />
-
-    </svg>
-
-
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
 
     <h1>Jeopardy</h1>
 
-
-
-    <svg viewBox="0 0 24 24" fill="currentColor">
-
-      <path
-
-        d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z"
-
-        transform="translate(1.4)"
-
-      />
-
-    </svg>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
 
   </div>
 
+  <p class="mode-tag">HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben</p>
 
 
-  <p class="mode-tag">
-
-    HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben
-
-  </p>
-
-
-
-
-
-  <!-- JEOPARDY SPIELFELD -->
 
   <div class="board">
 
@@ -96,881 +50,313 @@
 
 
 
-
-
-  <!-- SPIELER / KAMERAS -->
-
   <div class="camrow" id="camrow"></div>
 
 
 
-
-
-  <!-- HOST-STEUERUNG -->
-
   <details class="host-panel" open>
 
-
-
-    <summary>
-
-      🔒 Host-Steuerung – nur für dich
-
-    </summary>
-
-
+    <summary>Host-Steuerung – nur für dich</summary>
 
     <div class="host-rows" id="host-rows"></div>
 
-
-
-    <button class="add-team" id="add-team">
-
-      + Person hinzufügen
-
-    </button>
-
-
+    <button class="add-team" id="add-team">+ Person hinzufügen</button>
 
   </details>
 
 
 
-
-
-  <!-- FRAGEN-MODAL -->
-
   <div class="overlay" id="overlay" hidden>
-
-
 
     <div class="modal">
 
-
-
       <div class="eyebrow" id="modal-meta"></div>
-
-
 
       <p class="prompt" id="modal-question"></p>
 
-
-
       <p class="answer" id="modal-answer" hidden></p>
-
-
 
       <div class="modal-actions">
 
+        <button class="btn-primary" id="reveal-btn">Antwort zeigen</button>
 
-
-        <button class="btn-primary" id="reveal-btn">
-
-          Antwort zeigen
-
-        </button>
-
-
-
-        <button class="btn-ghost" id="close-btn">
-
-          Schließen
-
-        </button>
-
-
+        <button class="btn-ghost" id="close-btn">Schließen</button>
 
       </div>
 
-
-
     </div>
-
-
 
   </div>
 
 
 
+<script src="firebase-config.js"></script>
 
+<script src="game-data.js"></script>
 
-  <!-- JAVASCRIPT -->
+<script src="sync.js"></script>
 
-  <script src="firebase-config.js"></script>
+<script src="board.js"></script>
 
-  <script src="game-data.js"></script>
+<script>
 
-  <script src="sync.js"></script>
+  let nextId = PLAYERS.length + 1;
 
-  <script src="board.js"></script>
 
 
+  const camrow = document.getElementById('camrow');
 
-  <script>
+  const hostRows = document.getElementById('host-rows');
 
 
 
-    /* =========================================================
+  function renderCamRow(){
 
-       GRUNDEINSTELLUNG
+    camrow.innerHTML = '';
 
-    ========================================================= */
+    PLAYERS.forEach(p => {
 
+      const tile = document.createElement('div');
 
+      tile.className = 'cam-tile';
 
-    let nextId = 1;
 
 
+      const videoWrap = document.createElement('div');
 
-    const camrow = document.getElementById('camrow');
+      videoWrap.className = 'cam-video-wrap';
 
-    const hostRows = document.getElementById('host-rows');
 
-    const addTeamButton = document.getElementById('add-team');
 
+      const placeholder = document.createElement('div');
 
+      placeholder.className = 'cam-placeholder';
 
+      placeholder.textContent = p.name.charAt(0).toUpperCase();
 
 
-    /* =========================================================
 
-       SPIELER NORMALISIEREN
+      const video = document.createElement('video');
 
-       Firebase kann Array oder Objekt liefern.
+      video.autoplay = true;
 
-    ========================================================= */
+      video.muted = true;
 
+      video.playsInline = true;
 
 
-    function normalizePlayers(players) {
 
+      const camBtn = document.createElement('button');
 
+      camBtn.className = 'cam-toggle';
 
-      if (!players) {
+      camBtn.textContent = 'Kamera an';
 
-        return [];
+      camBtn.addEventListener('click', async () => {
 
-      }
+        if (video.style.display === 'block') {
 
+          video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
 
+          video.style.display = 'none';
 
-      if (Array.isArray(players)) {
+          placeholder.style.display = 'flex';
 
-        return players;
+          camBtn.textContent = 'Kamera an';
 
-      }
+          return;
 
+        }
 
+        try {
 
-      return Object.values(players);
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-    }
+          video.srcObject = stream;
 
+          video.style.display = 'block';
 
+          placeholder.style.display = 'none';
 
+          camBtn.textContent = 'Kamera aus';
 
+        } catch (err) {
 
-    /* =========================================================
+          alert('Kamera konnte nicht gestartet werden: ' + err.message);
 
-       NÄCHSTE ID BERECHNEN
-
-    ========================================================= */
-
-
-
-    function updateNextId() {
-
-
-
-      if (!PLAYERS || PLAYERS.length === 0) {
-
-        nextId = 1;
-
-        return;
-
-      }
-
-
-
-      nextId =
-
-        Math.max(
-
-          0,
-
-          ...PLAYERS.map(player => Number(player.id) || 0)
-
-        ) + 1;
-
-    }
-
-
-
-
-
-    /* =========================================================
-
-       KAMERA / SPIELER-KARTEN
-
-    ========================================================= */
-
-
-
-    function renderCamRow() {
-
-
-
-      camrow.innerHTML = '';
-
-
-
-      PLAYERS.forEach(player => {
-
-
-
-        const tile = document.createElement('div');
-
-        tile.className = 'cam-tile';
-
-
-
-
-
-        const videoWrap = document.createElement('div');
-
-        videoWrap.className = 'cam-video-wrap';
-
-
-
-
-
-        const placeholder = document.createElement('div');
-
-        placeholder.className = 'cam-placeholder';
-
-
-
-        placeholder.textContent =
-
-          (player.name || '?').charAt(0).toUpperCase();
-
-
-
-
-
-        const video = document.createElement('video');
-
-
-
-        video.autoplay = true;
-
-        video.muted = true;
-
-        video.playsInline = true;
-
-
-
-        video.style.display = 'none';
-
-
-
-
-
-        /* Kamera-Button */
-
-
-
-        const camButton = document.createElement('button');
-
-
-
-        camButton.className = 'cam-toggle';
-
-        camButton.textContent = 'Kamera an';
-
-
-
-
-
-        camButton.addEventListener('click', async () => {
-
-
-
-          /* Kamera ausschalten */
-
-
-
-          if (video.style.display === 'block') {
-
-
-
-            if (video.srcObject) {
-
-
-
-              video.srcObject
-
-                .getTracks()
-
-                .forEach(track => track.stop());
-
-
-
-            }
-
-
-
-            video.srcObject = null;
-
-
-
-            video.style.display = 'none';
-
-
-
-            placeholder.style.display = 'flex';
-
-
-
-            camButton.textContent = 'Kamera an';
-
-
-
-            return;
-
-          }
-
-
-
-
-
-          /* Kamera einschalten */
-
-
-
-          try {
-
-
-
-            const stream =
-
-              await navigator.mediaDevices.getUserMedia({
-
-                video: true
-
-              });
-
-
-
-            video.srcObject = stream;
-
-
-
-            video.style.display = 'block';
-
-
-
-            placeholder.style.display = 'none';
-
-
-
-            camButton.textContent = 'Kamera aus';
-
-
-
-          } catch (error) {
-
-
-
-            console.error('Kamera-Fehler:', error);
-
-
-
-            alert(
-
-              'Kamera konnte nicht gestartet werden: ' +
-
-              error.message
-
-            );
-
-
-
-          }
-
-
-
-        });
-
-
-
-
-
-        videoWrap.appendChild(placeholder);
-
-        videoWrap.appendChild(video);
-
-        videoWrap.appendChild(camButton);
-
-
-
-
-
-        /* Fußzeile */
-
-
-
-        const footer = document.createElement('div');
-
-        footer.className = 'cam-footer';
-
-
-
-
-
-        const nameElement = document.createElement('span');
-
-        nameElement.className = 'cam-name';
-
-        nameElement.textContent = player.name;
-
-
-
-
-
-        const scoreElement = document.createElement('span');
-
-        scoreElement.className = 'cam-score';
-
-        scoreElement.textContent = player.score;
-
-
-
-
-
-        footer.appendChild(nameElement);
-
-        footer.appendChild(scoreElement);
-
-
-
-
-
-        tile.appendChild(videoWrap);
-
-        tile.appendChild(footer);
-
-
-
-
-
-        camrow.appendChild(tile);
-
-
+        }
 
       });
 
 
 
-    }
+      videoWrap.appendChild(placeholder);
 
+      videoWrap.appendChild(video);
 
+      videoWrap.appendChild(camBtn);
 
 
 
-    /* =========================================================
+      const footer = document.createElement('div');
 
-       HOST-SPIELERLISTE
+      footer.className = 'cam-footer';
 
-    ========================================================= */
+      const nameEl = document.createElement('span');
 
+      nameEl.className = 'cam-name';
 
+      nameEl.textContent = p.name;
 
-    function renderHostRows() {
+      const scoreEl = document.createElement('span');
 
+      scoreEl.className = 'cam-score';
 
+      scoreEl.textContent = p.score;
 
-      hostRows.innerHTML = '';
+      footer.appendChild(nameEl);
 
+      footer.appendChild(scoreEl);
 
 
 
+      tile.appendChild(videoWrap);
 
-      PLAYERS.forEach(player => {
+      tile.appendChild(footer);
 
+      camrow.appendChild(tile);
 
+    });
 
-        const row = document.createElement('div');
+  }
 
-        row.className = 'host-row';
 
 
+  function renderHostRows(){
 
+    hostRows.innerHTML = '';
 
+    PLAYERS.forEach(p => {
 
-        /* Name */
+      const row = document.createElement('div');
 
+      row.className = 'host-row';
 
 
-        const nameInput = document.createElement('input');
 
+      const nameInput = document.createElement('input');
 
+      nameInput.type = 'text';
 
-        nameInput.type = 'text';
+      nameInput.value = p.name;
 
-        nameInput.value = player.name;
+      nameInput.addEventListener('change', e => {
 
+        p.name = e.target.value;
 
-
-
-
-        nameInput.addEventListener('change', event => {
-
-
-
-          player.name = event.target.value;
-
-
-
-          savePlayers(PLAYERS);
-
-
-
-        });
-
-
-
-
-
-        /* Minus */
-
-
-
-        const minusButton = document.createElement('button');
-
-
-
-        minusButton.className = 'score-btn';
-
-        minusButton.textContent = '−';
-
-
-
-
-
-        minusButton.addEventListener('click', () => {
-
-
-
-          player.score =
-
-            Number(player.score || 0) - 100;
-
-
-
-          renderCamRow();
-
-          renderHostRows();
-
-
-
-          savePlayers(PLAYERS);
-
-
-
-        });
-
-
-
-
-
-        /* Punktestand */
-
-
-
-        const scoreElement = document.createElement('span');
-
-
-
-        scoreElement.className = 'host-score-value';
-
-
-
-        scoreElement.textContent =
-
-          Number(player.score || 0);
-
-
-
-
-
-        /* Plus */
-
-
-
-        const plusButton = document.createElement('button');
-
-
-
-        plusButton.className = 'score-btn';
-
-        plusButton.textContent = '+';
-
-
-
-
-
-        plusButton.addEventListener('click', () => {
-
-
-
-          player.score =
-
-            Number(player.score || 0) + 100;
-
-
-
-          renderCamRow();
-
-          renderHostRows();
-
-
-
-          savePlayers(PLAYERS);
-
-
-
-        });
-
-
-
-
-
-        /* Entfernen */
-
-
-
-        const removeButton = document.createElement('button');
-
-
-
-        removeButton.className = 'remove-btn';
-
-        removeButton.textContent = 'Entfernen';
-
-
-
-
-
-        removeButton.addEventListener('click', () => {
-
-
-
-          PLAYERS =
-
-            PLAYERS.filter(
-
-              existingPlayer =>
-
-                existingPlayer.id !== player.id
-
-            );
-
-
-
-          updateNextId();
-
-
-
-          renderCamRow();
-
-          renderHostRows();
-
-
-
-          savePlayers(PLAYERS);
-
-
-
-        });
-
-
-
-
-
-        row.appendChild(nameInput);
-
-        row.appendChild(minusButton);
-
-        row.appendChild(scoreElement);
-
-        row.appendChild(plusButton);
-
-        row.appendChild(removeButton);
-
-
-
-
-
-        hostRows.appendChild(row);
-
-
+        savePlayers(PLAYERS);
 
       });
 
 
 
-    }
+      const minus = document.createElement('button');
+
+      minus.className = 'score-btn';
+
+      minus.textContent = '−';
+
+      minus.addEventListener('click', () => { p.score -= 100; savePlayers(PLAYERS); });
 
 
 
+      const scoreVal = document.createElement('span');
 
+      scoreVal.className = 'host-score-value';
 
-    /* =========================================================
-
-       PERSON HINZUFÜGEN
-
-    ========================================================= */
-
-
-
-    addTeamButton.addEventListener('click', () => {
+      scoreVal.textContent = p.score;
 
 
 
-      const newPlayer = {
+      const plus = document.createElement('button');
+
+      plus.className = 'score-btn';
+
+      plus.textContent = '+';
+
+      plus.addEventListener('click', () => { p.score += 100; savePlayers(PLAYERS); });
 
 
 
-        id: nextId,
+      const remove = document.createElement('button');
+
+      remove.className = 'remove-btn';
+
+      remove.textContent = 'Entfernen';
+
+      remove.addEventListener('click', () => {
+
+        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
+
+        savePlayers(PLAYERS);
+
+      });
 
 
 
-        name: 'Spieler ' + (PLAYERS.length + 1),
+      row.appendChild(nameInput);
 
+      row.appendChild(minus);
 
+      row.appendChild(scoreVal);
 
-        score: 0
+      row.appendChild(plus);
 
+      row.appendChild(remove);
 
-
-      };
-
-
-
-
-
-      PLAYERS.push(newPlayer);
-
-
-
-      nextId++;
-
-
-
-
-
-      /* Sofort auf dem Host anzeigen */
-
-
-
-      renderCamRow();
-
-      renderHostRows();
-
-
-
-
-
-      /* In Firebase speichern */
-
-
-
-      savePlayers(PLAYERS);
-
-
+      hostRows.appendChild(row);
 
     });
 
+  }
 
 
 
+  document.getElementById('add-team').addEventListener('click', () => {
 
-    /* =========================================================
+    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0 });
 
-       SPIELFELD
+    savePlayers(PLAYERS);
 
-    ========================================================= */
-
-
-
-    renderBoard(true);
+  });
 
 
 
+  // Board ist hier klickbar — der Host löst Fragen aus.
 
+  renderBoard(true);
 
-    /* =========================================================
-
-       SPIELER INITIALISIEREN
-
-    ========================================================= */
-
-
-
-    seedPlayersIfEmpty();
+  seedPlayersIfEmpty();
 
 
 
+  // Von Firebase kommende Änderungen (z. B. von dir selbst gespeichert) wieder anzeigen:
 
+  watchPlayers(players => {
 
-    /* =========================================================
+    PLAYERS = players;
 
-       FIREBASE SPIELER-SYNCHRONISATION
+    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
 
-    ========================================================= */
+    renderCamRow();
 
+    renderHostRows();
 
+  });
 
-    watchPlayers(players => {
+  watchUsedCells(applyUsedCells);
 
-
-
-      PLAYERS = normalizePlayers(players);
-
-
-
-      updateNextId();
-
-
-
-      renderCamRow();
-
-      renderHostRows();
-
-
-
-    });
-
-
-
-
-
-    /* =========================================================
-
-       BENUTZTE FELDER SYNCHRONISIEREN
-
-    ========================================================= */
-
-
-
-    watchUsedCells(applyUsedCells);
-
-
-
-  </script>
-
-
+</script>
 
 </body>
 
