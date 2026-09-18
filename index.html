@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,65 +8,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="shared.css">
 </head>
-
 <body>
 
-  <!-- ======================================================
-       HEADER
-  ======================================================= -->
+  <!-- HEADER -->
   <div class="header">
     <svg viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z" transform="translate(1.4)" />
     </svg>
-
     <h1>Jeopardy</h1>
-
     <svg viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z" transform="translate(1.4)" />
     </svg>
   </div>
 
-
-  <!-- ======================================================
-       SPIELER AUSWÄHLEN
-  ======================================================= -->
+  <!-- SPIELER AUSWÄHLEN -->
   <div id="player-select-box" style="max-width:1080px; margin:0 auto 20px; text-align:center; padding:15px;">
-    <label for="player-select" style="font-weight:800; margin-right:10px;">
-      Du bist:
-    </label>
-
+    <label for="player-select" style="font-weight:800; margin-right:10px;">Du bist:</label>
     <select id="player-select" style="padding:10px 15px; border-radius:10px; font-size:16px;">
       <option value="">Spieler auswählen</option>
     </select>
   </div>
 
-
-  <!-- ======================================================
-       SPIELFELD
-  ======================================================= -->
+  <!-- SPIELFELD -->
   <div class="board">
     <div class="grid" id="board-grid"></div>
   </div>
 
-
-  <!-- ======================================================
-       KAMERAS
-  ======================================================= -->
+  <!-- KAMERAS -->
   <div class="camrow" id="camrow"></div>
 
-
-  <!-- ======================================================
-       MODAL (Fragenanzeige)
-  ======================================================= -->
+  <!-- MODAL -->
   <div class="overlay" id="overlay" hidden>
     <div class="modal">
       <div class="eyebrow" id="modal-meta"></div>
       <p class="prompt" id="modal-question"></p>
       <p class="answer" id="modal-answer" hidden></p>
-
       <div class="modal-actions">
         <button class="btn-primary" id="reveal-btn">Antwort zeigen</button>
         <button class="btn-ghost" id="close-btn">Schließen</button>
@@ -75,10 +52,7 @@
     </div>
   </div>
 
-
-  <!-- ======================================================
-       JAVASCRIPT MODUL
-  ======================================================= -->
+  <!-- JAVASCRIPT MODUL -->
   <script type="module">
     import { 
       watchPlayers, 
@@ -90,9 +64,6 @@
     } from './sync.js';
     import { renderBoard, applyUsedCells, openModal } from './board.js';
 
-    // ========================================================
-    // VARIABLEN & HTML-ELEMENTE
-    // ========================================================
     const camrow = document.getElementById('camrow');
     const playerSelect = document.getElementById('player-select');
     const playerSelectBox = document.getElementById('player-select-box');
@@ -101,55 +72,35 @@
     let localPlayerId = null;
     const remoteStreams = {};
 
-    // Spieler-ID aus der URL auslesen (?player=1)
     const urlParams = new URLSearchParams(window.location.search);
     const urlPlayerId = urlParams.get('player');
-
     if (urlPlayerId !== null) {
       localPlayerId = Number(urlPlayerId);
     }
 
-    // ========================================================
-    // SPIELER AUSWAHL DROPDOWN
-    // ========================================================
     function renderPlayerSelect() {
       playerSelect.innerHTML = '<option value="">Spieler auswählen</option>';
-
       PLAYERS.forEach(player => {
         const option = document.createElement('option');
         option.value = player.id;
         option.textContent = player.name;
-
         if (Number(player.id) === Number(localPlayerId)) {
           option.selected = true;
         }
-
         playerSelect.appendChild(option);
       });
 
-      if (localPlayerId !== null) {
-        playerSelectBox.style.display = 'none';
-      } else {
-        playerSelectBox.style.display = 'block';
-      }
+      playerSelectBox.style.display = localPlayerId !== null ? 'none' : 'block';
     }
 
     playerSelect.addEventListener('change', () => {
       if (!playerSelect.value) return;
-
       localPlayerId = Number(playerSelect.value);
-
-      // Seite neu laden mit der neu gewählten Spieler-ID
-      const newUrl = window.location.pathname + '?player=' + encodeURIComponent(localPlayerId);
-      window.location.href = newUrl;
+      window.location.href = window.location.pathname + '?player=' + encodeURIComponent(localPlayerId);
     });
 
-    // ========================================================
-    // KAMERAS RENDERN
-    // ========================================================
     function renderCamRow() {
       camrow.innerHTML = '';
-
       PLAYERS.forEach(player => {
         const tile = document.createElement('div');
         tile.className = 'cam-tile';
@@ -167,7 +118,6 @@
         video.muted = true;
         video.style.display = 'none';
 
-        // Bereits empfangener Stream für diesen Spieler vorhanden?
         if (remoteStreams[player.id]) {
           video.srcObject = remoteStreams[player.id];
           video.style.display = 'block';
@@ -182,7 +132,6 @@
           camBtn.textContent = 'Kamera an';
 
           camBtn.addEventListener('click', async () => {
-            // Kamera ausschalten
             if (video.srcObject) {
               stopLocalCamera();
               video.srcObject = null;
@@ -192,7 +141,6 @@
               return;
             }
 
-            // Kamera einschalten
             try {
               const stream = await startLocalCamera();
               video.srcObject = stream;
@@ -205,27 +153,23 @@
           });
 
           videoWrap.appendChild(camBtn);
-        } else {
-          if (remoteStreams[player.id]) {
-            const status = document.createElement('div');
-            status.style.position = 'absolute';
-            status.style.bottom = '8px';
-            status.style.left = '8px';
-            status.style.background = 'rgba(0,0,0,.7)';
-            status.style.color = 'white';
-            status.style.padding = '4px 8px';
-            status.style.borderRadius = '6px';
-            status.style.fontSize = '12px';
-            status.textContent = 'LIVE';
-
-            videoWrap.appendChild(status);
-          }
+        } else if (remoteStreams[player.id]) {
+          const status = document.createElement('div');
+          status.style.position = 'absolute';
+          status.style.bottom = '8px';
+          status.style.left = '8px';
+          status.style.background = 'rgba(0,0,0,.7)';
+          status.style.color = 'white';
+          status.style.padding = '4px 8px';
+          status.style.borderRadius = '6px';
+          status.style.fontSize = '12px';
+          status.textContent = 'LIVE';
+          videoWrap.appendChild(status);
         }
 
         videoWrap.insertBefore(placeholder, videoWrap.firstChild);
         videoWrap.insertBefore(video, videoWrap.children[1]);
 
-        // Footer mit Name und Punkten
         const footer = document.createElement('div');
         footer.className = 'cam-footer';
 
@@ -242,35 +186,20 @@
 
         tile.appendChild(videoWrap);
         tile.appendChild(footer);
-
         camrow.appendChild(tile);
       });
     }
 
-    // ========================================================
-    // SPIELFELD RENDERN (nicht-interaktiv für Spieler)
-    // ========================================================
     renderBoard(false);
 
-    // ========================================================
-    // FIREBASE LISTENERS
-    // ========================================================
-
-    // 1. Spieler-Synchronisation
     watchPlayers(players => {
-      if (!players) {
-        PLAYERS = [];
-      } else {
-        PLAYERS = Array.isArray(players) ? players : Object.values(players);
-      }
+      PLAYERS = !players ? [] : (Array.isArray(players) ? players : Object.values(players));
       renderPlayerSelect();
       renderCamRow();
     });
 
-    // 2. Benutzte Felder synchronisieren
     watchUsedCells(applyUsedCells);
 
-    // 3. Aktive Frage synchronisieren (Öffnet Modal automatisch)
     watchActiveQuestion(qData => {
       const overlay = document.getElementById('overlay');
       if (qData) {
@@ -280,21 +209,15 @@
       }
     });
 
-    // ========================================================
-    // WEBRTC KAMERA-SYNC
-    // ========================================================
     initCameraSync({
       role: 'player',
       playerId: localPlayerId,
       onRemoteStream: (playerId, stream) => {
-        if (playerId == null) return;
-        if (Number(playerId) === Number(localPlayerId)) return;
-
+        if (playerId == null || Number(playerId) === Number(localPlayerId)) return;
         remoteStreams[playerId] = stream;
         renderCamRow();
       }
     });
   </script>
-
 </body>
 </html>
