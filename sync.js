@@ -30,9 +30,15 @@ function watchUsedCells(callback){
 
 // Schreibt die komplette Spielerliste in die Datenbank (überschreibt den alten Stand).
 function savePlayers(players){
-  db.ref('players').set(players);
+  return db.ref('players').set(players)
+    .then(() => {
+      console.log('Spieler erfolgreich gespeichert:', players);
+    })
+    .catch(err => {
+      console.error('Fehler beim Speichern der Spieler:', err);
+      alert('Spieler konnte nicht gespeichert werden: ' + err.message);
+    });
 }
-
 // Markiert eine einzelne Zelle als beantwortet.
 function markCellUsed(catIndex, value){
   db.ref('usedCells/' + cellKey(catIndex, value)).set(true);
