@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeopardy</title>
+<title>Jeopardy — Host</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -16,12 +16,19 @@
     <h1>Jeopardy</h1>
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
   </div>
+  <p class="mode-tag">HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben</p>
 
   <div class="board">
     <div class="grid" id="board-grid"></div>
   </div>
 
   <div class="camrow" id="camrow"></div>
+
+  <details class="host-panel" open>
+    <summary>Host-Steuerung – nur für dich</summary>
+    <div class="host-rows" id="host-rows"></div>
+    <button class="add-team" id="add-team">+ Person hinzufügen</button>
+  </details>
 
   <div class="overlay" id="overlay" hidden>
     <div class="modal">
@@ -38,8 +45,15 @@
 <script src="game-data.js"></script>
 <script src="board.js"></script>
 <script>
-  // Facecams: nur Kamera + Name, keine Punkte-Steuerung auf dieser Seite.
+  let nextId = PLAYERS.length + 1;
+
   const camrow = document.getElementById('camrow');
+  const hostRows = document.getElementById('host-rows');
+
+  function renderAll(){
+    renderCamRow();
+    renderHostRows();
+  }
 
   function renderCamRow(){
     camrow.innerHTML = '';
@@ -90,7 +104,11 @@
       const nameEl = document.createElement('span');
       nameEl.className = 'cam-name';
       nameEl.textContent = p.name;
+      const scoreEl = document.createElement('span');
+      scoreEl.className = 'cam-score';
+      scoreEl.textContent = p.score;
       footer.appendChild(nameEl);
+      footer.appendChild(scoreEl);
 
       tile.appendChild(videoWrap);
       tile.appendChild(footer);
@@ -98,7 +116,57 @@
     });
   }
 
-  renderCamRow();
+  function renderHostRows(){
+    hostRows.innerHTML = '';
+    PLAYERS.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'host-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = p.name;
+      nameInput.addEventListener('input', e => {
+        p.name = e.target.value;
+        renderCamRow();
+      });
+
+      const minus = document.createElement('button');
+      minus.className = 'score-btn';
+      minus.textContent = '−';
+      minus.addEventListener('click', () => { p.score -= 100; renderAll(); });
+
+      const scoreVal = document.createElement('span');
+      scoreVal.className = 'host-score-value';
+      scoreVal.textContent = p.score;
+
+      const plus = document.createElement('button');
+      plus.className = 'score-btn';
+      plus.textContent = '+';
+      plus.addEventListener('click', () => { p.score += 100; renderAll(); });
+
+      const remove = document.createElement('button');
+      remove.className = 'remove-btn';
+      remove.textContent = 'Entfernen';
+      remove.addEventListener('click', () => {
+        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
+        renderAll();
+      });
+
+      row.appendChild(nameInput);
+      row.appendChild(minus);
+      row.appendChild(scoreVal);
+      row.appendChild(plus);
+      row.appendChild(remove);
+      hostRows.appendChild(row);
+    });
+  }
+
+  document.getElementById('add-team').addEventListener('click', () => {
+    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0 });
+    renderAll();
+  });
+
+  renderAll();
 </script>
 </body>
 </html>
