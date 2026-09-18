@@ -1,5 +1,11 @@
-// Firebase-Konfiguration für dieses Projekt (jeopardyvonflixo).
-// apiKey & co. sind für Web-Apps öffentlich sichtbar, das ist normal und kein Sicherheitsproblem.
+// ============================================================
+// firebase-config.js
+// Firebase Initialisierung (Modular SDK v10)
+// ============================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCDoZCuIQ-y785px-X-oaMq1SKnaH1WZTk",
   authDomain: "jeopardyvonflixo.firebaseapp.com",
@@ -11,5 +17,8 @@ const firebaseConfig = {
   measurementId: "G-5CBWM33M5M"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// Firebase App initialisieren
+const app = initializeApp(firebaseConfig);
+
+// Realtime Database Instanz exportieren
+export const db = getDatabase(app);
