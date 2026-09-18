@@ -11,9 +11,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="shared.css">
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 
 <body>
@@ -61,9 +58,15 @@
 
     <div class="host-rows" id="host-rows"></div>
 
-    <button class="add-team" id="add-team">
-      + Person hinzufügen
-    </button>
+    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="add-team" id="add-team">
+        + Person hinzufügen
+      </button>
+
+      <button class="add-team" id="reset-board-btn" style="background-color: #e74c3c;">
+        🔄 Alle Felder zurücksetzen
+      </button>
+    </div>
 
   </details>
 
@@ -96,23 +99,28 @@
   </div>
 
 
-  <!-- JAVASCRIPT -->
-  <script src="firebase-config.js"></script>
-  <script src="game-data.js"></script>
-  <script src="sync.js"></script>
-  <script src="board.js"></script>
-
-  <script>
+  <!-- JAVASCRIPT MODUL -->
+  <script type="module">
+    import { 
+      watchPlayers, 
+      savePlayers, 
+      seedPlayersIfEmpty, 
+      watchUsedCells, 
+      resetUsedCells 
+    } from './sync.js';
+    import { renderBoard, applyUsedCells } from './board.js';
 
     /* =========================================================
        GRUNDEINSTELLUNG
     ========================================================= */
 
+    let PLAYERS = [];
     let nextId = 1;
 
     const camrow = document.getElementById('camrow');
     const hostRows = document.getElementById('host-rows');
     const addTeamButton = document.getElementById('add-team');
+    const resetBoardButton = document.getElementById('reset-board-btn');
 
 
     /* =========================================================
@@ -121,15 +129,8 @@
     ========================================================= */
 
     function normalizePlayers(players) {
-
-      if (!players) {
-        return [];
-      }
-
-      if (Array.isArray(players)) {
-        return players;
-      }
-
+      if (!players) return [];
+      if (Array.isArray(players)) return players;
       return Object.values(players);
     }
 
@@ -139,17 +140,15 @@
     ========================================================= */
 
     function updateNextId() {
-
       if (!PLAYERS || PLAYERS.length === 0) {
         nextId = 1;
         return;
       }
 
-      nextId =
-        Math.max(
-          0,
-          ...PLAYERS.map(player => Number(player.id) || 0)
-        ) + 1;
+      nextId = Math.max(
+        0,
+        ...PLAYERS.map(player => Number(player.id) || 0)
+      ) + 1;
     }
 
 
@@ -158,133 +157,82 @@
     ========================================================= */
 
     function renderCamRow() {
-
       camrow.innerHTML = '';
 
       PLAYERS.forEach(player => {
-
         const tile = document.createElement('div');
         tile.className = 'cam-tile';
-
 
         const videoWrap = document.createElement('div');
         videoWrap.className = 'cam-video-wrap';
 
-
         const placeholder = document.createElement('div');
         placeholder.className = 'cam-placeholder';
-
-        placeholder.textContent =
-          (player.name || '?').charAt(0).toUpperCase();
-
+        placeholder.textContent = (player.name || '?').charAt(0).toUpperCase();
 
         const video = document.createElement('video');
-
         video.autoplay = true;
         video.muted = true;
         video.playsInline = true;
-
         video.style.display = 'none';
 
-
         /* Kamera-Button */
-
         const camButton = document.createElement('button');
-
         camButton.className = 'cam-toggle';
         camButton.textContent = 'Kamera an';
 
-
         camButton.addEventListener('click', async () => {
-
           /* Kamera ausschalten */
-
           if (video.style.display === 'block') {
-
             if (video.srcObject) {
-
-              video.srcObject
-                .getTracks()
-                .forEach(track => track.stop());
-
+              video.srcObject.getTracks().forEach(track => track.stop());
             }
-
             video.srcObject = null;
-
             video.style.display = 'none';
-
             placeholder.style.display = 'flex';
-
             camButton.textContent = 'Kamera an';
-
             return;
           }
 
-
           /* Kamera einschalten */
-
           try {
-
-            const stream =
-              await navigator.mediaDevices.getUserMedia({
-                video: true
-              });
-
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: true
+            });
             video.srcObject = stream;
-
             video.style.display = 'block';
-
             placeholder.style.display = 'none';
-
             camButton.textContent = 'Kamera aus';
-
           } catch (error) {
-
             console.error('Kamera-Fehler:', error);
-
-            alert(
-              'Kamera konnte nicht gestartet werden: ' +
-              error.message
-            );
-
+            alert('Kamera konnte nicht gestartet werden: ' + error.message);
           }
-
         });
-
 
         videoWrap.appendChild(placeholder);
         videoWrap.appendChild(video);
         videoWrap.appendChild(camButton);
 
-
         /* Fußzeile */
-
         const footer = document.createElement('div');
         footer.className = 'cam-footer';
-
 
         const nameElement = document.createElement('span');
         nameElement.className = 'cam-name';
         nameElement.textContent = player.name;
 
-
         const scoreElement = document.createElement('span');
         scoreElement.className = 'cam-score';
         scoreElement.textContent = player.score;
 
-
         footer.appendChild(nameElement);
         footer.appendChild(scoreElement);
-
 
         tile.appendChild(videoWrap);
         tile.appendChild(footer);
 
-
         camrow.appendChild(tile);
-
       });
-
     }
 
 
@@ -293,110 +241,65 @@
     ========================================================= */
 
     function renderHostRows() {
-
       hostRows.innerHTML = '';
 
-
       PLAYERS.forEach(player => {
-
         const row = document.createElement('div');
         row.className = 'host-row';
 
-
         /* Name */
-
         const nameInput = document.createElement('input');
-
         nameInput.type = 'text';
         nameInput.value = player.name;
 
-
         nameInput.addEventListener('change', event => {
-
           player.name = event.target.value;
-
           savePlayers(PLAYERS);
-
         });
 
-
         /* Minus */
-
         const minusButton = document.createElement('button');
-
         minusButton.className = 'score-btn';
         minusButton.textContent = '−';
 
-
         minusButton.addEventListener('click', () => {
-
-          player.score =
-            Number(player.score || 0) - 100;
-
+          player.score = Number(player.score || 0) - 100;
           renderCamRow();
           renderHostRows();
-
           savePlayers(PLAYERS);
-
         });
 
-
         /* Punktestand */
-
         const scoreElement = document.createElement('span');
-
         scoreElement.className = 'host-score-value';
-
-        scoreElement.textContent =
-          Number(player.score || 0);
-
+        scoreElement.textContent = Number(player.score || 0);
 
         /* Plus */
-
         const plusButton = document.createElement('button');
-
         plusButton.className = 'score-btn';
         plusButton.textContent = '+';
 
-
         plusButton.addEventListener('click', () => {
-
-          player.score =
-            Number(player.score || 0) + 100;
-
+          player.score = Number(player.score || 0) + 100;
           renderCamRow();
           renderHostRows();
-
           savePlayers(PLAYERS);
-
         });
 
-
         /* Entfernen */
-
         const removeButton = document.createElement('button');
-
         removeButton.className = 'remove-btn';
         removeButton.textContent = 'Entfernen';
 
-
         removeButton.addEventListener('click', () => {
-
-          PLAYERS =
-            PLAYERS.filter(
-              existingPlayer =>
-                existingPlayer.id !== player.id
-            );
-
+          PLAYERS = PLAYERS.filter(
+            existingPlayer => existingPlayer.id !== player.id
+          );
           updateNextId();
-
           renderCamRow();
           renderHostRows();
-
           savePlayers(PLAYERS);
-
         });
-
 
         row.appendChild(nameInput);
         row.appendChild(minusButton);
@@ -404,83 +307,56 @@
         row.appendChild(plusButton);
         row.appendChild(removeButton);
 
-
         hostRows.appendChild(row);
-
       });
-
     }
 
 
     /* =========================================================
-       PERSON HINZUFÜGEN
+       PERSON HINZUFÜGEN & BOARD ZURÜCKSETZEN
     ========================================================= */
 
     addTeamButton.addEventListener('click', () => {
-
       const newPlayer = {
-
         id: nextId,
-
         name: 'Spieler ' + (PLAYERS.length + 1),
-
         score: 0
-
       };
 
-
       PLAYERS.push(newPlayer);
-
       nextId++;
 
-
-      /* Sofort auf dem Host anzeigen */
-
       renderCamRow();
       renderHostRows();
-
-
-      /* In Firebase speichern */
-
       savePlayers(PLAYERS);
+    });
 
+    resetBoardButton.addEventListener('click', () => {
+      if (confirm('Möchtest du wirklich alle benutzten Felder auf dem Spielfeld zurücksetzen?')) {
+        resetUsedCells();
+      }
     });
 
 
     /* =========================================================
-       SPIELFELD
+       INITIALISIERUNG & SYNCHRONISATION
     ========================================================= */
 
+    // Spielfeld interaktiv rendern (Host darf klichen)
     renderBoard(true);
 
-
-    /* =========================================================
-       SPIELER INITIALISIEREN
-    ========================================================= */
-
+    // Standardspieler setzen falls DB leer ist
     seedPlayersIfEmpty();
 
-
-    /* =========================================================
-       FIREBASE SPIELER-SYNCHRONISATION
-    ========================================================= */
-
+    // Spieler-Synchronisation
     watchPlayers(players => {
-
       PLAYERS = normalizePlayers(players);
-
       updateNextId();
-
       renderCamRow();
       renderHostRows();
-
     });
 
-
-    /* =========================================================
-       BENUTZTE FELDER SYNCHRONISIEREN
-    ========================================================= */
-
+    // Spielfeld-Synchronisation (bereits benutzte Kacheln)
     watchUsedCells(applyUsedCells);
 
   </script>
