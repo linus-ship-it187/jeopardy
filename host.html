@@ -38,21 +38,58 @@
 
   <section class="camera-section">
 
-    <div class="camera-header">
+    <div
+      class="camera-header"
+      style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        flex-wrap:wrap;
+      "
+    >
 
       <h2>🎥 Kameras</h2>
 
-      <!-- SICHTBARER HOST-KAMERA-BUTTON -->
+
+      <!-- ==================================================
+           HOST KAMERA BUTTON
+      =================================================== -->
+
       <button
         id="hostCameraBtn"
-        class="cam-toggle"
         type="button"
+        style="
+          display:inline-block !important;
+          visibility:visible !important;
+          opacity:1 !important;
+          position:relative !important;
+          z-index:99999 !important;
+
+          padding:14px 24px !important;
+          margin:10px !important;
+
+          background:#3155d9 !important;
+          color:#ffffff !important;
+
+          border:2px solid #ffffff !important;
+          border-radius:10px !important;
+
+          font-size:18px !important;
+          font-weight:bold !important;
+
+          cursor:pointer !important;
+        "
       >
         📷 Kamera einschalten
       </button>
 
     </div>
 
+
+    <!-- ====================================================
+         KAMERA-REIHE
+    ===================================================== -->
 
     <div
       id="camRow"
@@ -70,6 +107,7 @@
 
         <div class="cam-video-wrap">
 
+          <!-- Platzhalter -->
           <div
             id="hostCamPlaceholder"
             class="cam-placeholder"
@@ -80,12 +118,18 @@
           </div>
 
 
+          <!-- Lokales Host-Video -->
           <video
             id="hostLocalVideo"
             autoplay
             muted
             playsinline
-            style="display:none;"
+            style="
+              display:none;
+              width:100%;
+              height:100%;
+              object-fit:cover;
+            "
           ></video>
 
         </div>
@@ -111,6 +155,7 @@
     <div class="host-panel-header">
 
       <h2>👥 Spieler</h2>
+
 
       <button
         id="addPlayerBtn"
@@ -218,30 +263,25 @@
 
 
     // ======================================================
-    // HOST-KAMERA
+    // HOST-KAMERA EIN/AUS
     // ======================================================
 
     async function toggleHostCamera() {
 
-      // ----------------------------------------------------
+      console.log(
+        "Host-Kamera Button gedrückt."
+      );
+
+
+      // ====================================================
       // KAMERA AUSSCHALTEN
-      // ----------------------------------------------------
+      // ====================================================
 
       if (hostCameraStream) {
 
         console.log(
           "Host-Kamera wird ausgeschaltet."
         );
-
-
-        if (
-          typeof stopLocalCamera ===
-          "function"
-        ) {
-
-          stopLocalCamera();
-
-        }
 
 
         hostCameraStream
@@ -272,9 +312,8 @@
           "📷 Kamera einschalten";
 
 
-        hostCameraBtn.classList.remove(
-          "active"
-        );
+        hostCameraBtn.style.background =
+          "#3155d9";
 
 
         return;
@@ -282,9 +321,9 @@
       }
 
 
-      // ----------------------------------------------------
-      // BROWSER PRÜFEN
-      // ----------------------------------------------------
+      // ====================================================
+      // BROWSER KAMERA PRÜFEN
+      // ====================================================
 
       if (
         !navigator.mediaDevices ||
@@ -292,7 +331,8 @@
       ) {
 
         alert(
-          "Dein Browser unterstützt keinen Kamerazugriff."
+          "Dein Browser unterstützt keinen Kamerazugriff.\n\n" +
+          "Bitte verwende einen aktuellen Chrome-, Edge- oder Firefox-Browser."
         );
 
         return;
@@ -300,9 +340,9 @@
       }
 
 
-      // ----------------------------------------------------
+      // ====================================================
       // HTTPS PRÜFEN
-      // ----------------------------------------------------
+      // ====================================================
 
       if (
         !window.isSecureContext &&
@@ -310,8 +350,8 @@
       ) {
 
         alert(
-          "Der Kamerazugriff funktioniert nur über HTTPS " +
-          "oder localhost."
+          "Die Kamera funktioniert nur über HTTPS oder localhost.\n\n" +
+          "Öffne die Seite über deine GitHub-Pages-Adresse."
         );
 
         return;
@@ -319,10 +359,14 @@
       }
 
 
+      // ====================================================
+      // KAMERA STARTEN
+      // ====================================================
+
       try {
 
         console.log(
-          "Versuche Host-Kamera zu öffnen..."
+          "Fordere Kamerazugriff an..."
         );
 
 
@@ -333,10 +377,6 @@
         hostCameraBtn.textContent =
           "⏳ Kamera wird gestartet...";
 
-
-        // --------------------------------------------------
-        // KAMERA ÖFFNEN
-        // --------------------------------------------------
 
         const stream =
           await navigator.mediaDevices.getUserMedia({
@@ -361,7 +401,7 @@
 
 
         console.log(
-          "Kamera erfolgreich geöffnet.",
+          "Kamera erfolgreich geöffnet!",
           stream
         );
 
@@ -370,9 +410,9 @@
           stream;
 
 
-        // --------------------------------------------------
-        // LOKALES VIDEO
-        // --------------------------------------------------
+        // ==================================================
+        // VIDEO ANZEIGEN
+        // ==================================================
 
         hostLocalVideo.srcObject =
           stream;
@@ -390,41 +430,19 @@
 
           await hostLocalVideo.play();
 
-        } catch (playError) {
+        } catch (error) {
 
           console.warn(
-            "Video konnte nicht automatisch gestartet werden:",
-            playError
+            "Video play() Fehler:",
+            error
           );
 
         }
 
 
-        // --------------------------------------------------
-        // AN WEBRTC ÜBERGEBEN
-        // --------------------------------------------------
-
-        if (
-          typeof startLocalCamera ===
-          "function"
-        ) {
-
-          await startLocalCamera(
-            stream
-          );
-
-        } else {
-
-          console.warn(
-            "startLocalCamera() wurde nicht gefunden."
-          );
-
-        }
-
-
-        // --------------------------------------------------
-        // BUTTON
-        // --------------------------------------------------
+        // ==================================================
+        // BUTTON AKTUALISIEREN
+        // ==================================================
 
         hostCameraBtn.disabled =
           false;
@@ -434,15 +452,29 @@
           "🛑 Kamera ausschalten";
 
 
-        hostCameraBtn.classList.add(
-          "active"
+        hostCameraBtn.style.background =
+          "#c62828";
+
+
+        console.log(
+          "HOST-KAMERA LÄUFT."
         );
 
+
+        /*
+         * WICHTIG:
+         *
+         * Hier wird absichtlich NICHT
+         * startLocalCamera() aufgerufen.
+         *
+         * Damit testen wir zunächst ausschließlich,
+         * ob die Host-Kamera lokal funktioniert.
+         */
 
       } catch (error) {
 
         console.error(
-          "Kamera-Fehler:",
+          "HOST KAMERA FEHLER:",
           error
         );
 
@@ -471,12 +503,16 @@
           "📷 Kamera einschalten";
 
 
-        // --------------------------------------------------
-        // FEHLERMELDUNG
-        // --------------------------------------------------
+        hostCameraBtn.style.background =
+          "#3155d9";
+
+
+        // ==================================================
+        // FEHLER AUSWERTEN
+        // ==================================================
 
         let message =
-          "Kamera konnte nicht gestartet werden.\n\n";
+          "Die Host-Kamera konnte nicht gestartet werden.\n\n";
 
 
         if (
@@ -485,14 +521,16 @@
         ) {
 
           message +=
-            "Die Kamera konnte nicht gelesen werden.\n\n" +
+            "Die Kamera ist vorhanden, kann aber nicht gelesen werden.\n\n" +
 
-            "Möglicherweise wird sie bereits von " +
-            "einem anderen Programm oder Browser-Tab " +
-            "verwendet.\n\n" +
+            "Möglicherweise wird sie bereits benutzt von:\n" +
+            "• OBS\n" +
+            "• Discord\n" +
+            "• Teams\n" +
+            "• Zoom\n" +
+            "• einem anderen Browser-Tab\n\n" +
 
-            "Schließe zum Beispiel OBS, Discord, Teams, " +
-            "Zoom oder andere Tabs mit Kamerazugriff.";
+            "Schließe diese Programme/Tabs und versuche es erneut.";
 
         }
 
@@ -504,18 +542,8 @@
           message +=
             "Der Browser hat den Kamerazugriff blockiert.\n\n" +
 
-            "Bitte erlaube dieser GitHub-Pages-Seite " +
-            "den Zugriff auf deine Kamera.";
-
-        }
-
-        else if (
-          error.name ===
-          "NotFoundError"
-        ) {
-
-          message +=
-            "Es wurde keine Kamera gefunden.";
+            "Klicke in der Browser-Adressleiste auf das Kamera-Symbol " +
+            "und erlaube den Kamerazugriff.";
 
         }
 
@@ -535,15 +563,16 @@
         ) {
 
           message +=
-            "Der Browser verhindert den Kamerazugriff " +
-            "aus Sicherheitsgründen.";
+            "Der Browser blockiert den Kamerazugriff aus Sicherheitsgründen.\n\n" +
+
+            "Verwende HTTPS.";
 
         }
 
         else {
 
           message +=
-            "Browser-Fehler:\n" +
+            "Fehler: " +
             error.name +
             "\n\n" +
             error.message;
@@ -559,7 +588,7 @@
 
 
     // ======================================================
-    // BUTTON
+    // BUTTON EVENT
     // ======================================================
 
     hostCameraBtn.addEventListener(
@@ -712,6 +741,8 @@
 
             renderHostRows();
 
+            renderCamRow();
+
           }
         );
 
@@ -776,6 +807,8 @@
 
         renderHostRows();
 
+        renderCamRow();
+
       }
     );
 
@@ -834,11 +867,14 @@
         );
 
 
-      // Alles außer Host entfernen
+      /*
+       * Spieler-Kacheln entfernen.
+       * Host-Kachel behalten.
+       */
+
       camRow.innerHTML = "";
 
 
-      // Host wieder einsetzen
       camRow.appendChild(
         hostTile
       );
@@ -951,9 +987,10 @@
         );
 
 
-        // --------------------------------------------------
-        // BEREITS VORHANDENEN REMOTE-STREAM ANZEIGEN
-        // --------------------------------------------------
+        /*
+         * Falls sync.js bereits einen Remote-Stream
+         * bereitstellt.
+         */
 
         if (
           typeof getRemoteCameraStream ===
@@ -994,7 +1031,7 @@
 
 
     // ======================================================
-    // INIT
+    // SEITE INITIALISIEREN
     // ======================================================
 
     document.addEventListener(
@@ -1002,7 +1039,15 @@
       async () => {
 
         console.log(
-          "Host-Seite wird initialisiert..."
+          "================================="
+        );
+
+        console.log(
+          "JEOPARDY HOST START"
+        );
+
+        console.log(
+          "================================="
         );
 
 
@@ -1037,7 +1082,7 @@
 
 
         // --------------------------------------------------
-        // SPIELER SYNCHRONISIEREN
+        // SPIELER ÜBERWACHEN
         // --------------------------------------------------
 
         if (
@@ -1068,9 +1113,9 @@
                 ) + 1;
 
 
-              renderCamRow();
-
               renderHostRows();
+
+              renderCamRow();
 
             }
           );
@@ -1095,127 +1140,16 @@
 
 
         // --------------------------------------------------
-        // WEBRTC
+        // WEBRTC VORERST NICHT BENÖTIGT
         // --------------------------------------------------
 
-        if (
-          typeof initCameraSync ===
-          "function"
-        ) {
-
-          console.log(
-            "Starte WebRTC-Synchronisation..."
-          );
-
-
-          initCameraSync({
-
-            role:
-              "host",
-
-
-            playerId:
-              null,
-
-
-            onRemoteStream:
-              (
-                peerInfo,
-                stream
-              ) => {
-
-                console.log(
-                  "Remote-Kamera vom Peer:",
-                  peerInfo
-                );
-
-
-                if (
-                  !peerInfo ||
-                  peerInfo.role !==
-                    "player"
-                ) {
-
-                  return;
-
-                }
-
-
-                const playerId =
-                  String(
-                    peerInfo.playerId
-                  );
-
-
-                const tile =
-                  document.getElementById(
-                    `cam-player-${playerId}`
-                  );
-
-
-                if (!tile) {
-
-                  return;
-
-                }
-
-
-                const video =
-                  tile.querySelector(
-                    "video"
-                  );
-
-
-                const placeholder =
-                  tile.querySelector(
-                    ".cam-placeholder"
-                  );
-
-
-                if (!video) {
-
-                  return;
-
-                }
-
-
-                video.srcObject =
-                  stream;
-
-
-                video.style.display =
-                  "block";
-
-
-                if (placeholder) {
-
-                  placeholder.style.display =
-                    "none";
-
-                }
-
-
-                video.play().catch(
-                  () => {}
-                );
-
-              }
-
-          });
-
-        }
-
-        else {
-
-          console.error(
-            "FEHLER: initCameraSync() ist nicht definiert."
-          );
-
-        }
+        console.log(
+          "Host-Kamera kann lokal gestartet werden."
+        );
 
 
         console.log(
-          "Host-Seite vollständig geladen."
+          "================================="
         );
 
       }
