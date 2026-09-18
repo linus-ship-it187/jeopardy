@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -44,19 +42,24 @@
     </div>
   </div>
 
-<script src="firebase-config.js"></script>
-<script src="game-data.js"></script>
-<script src="sync.js"></script>
-<script src="board.js"></script>
-<script>
-  let nextId = PLAYERS.length + 1;
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="game-data.js"></script>
+<script type="module" src="sync.js"></script>
+<script type="module" src="board.js"></script>
+<script type="module">
+  // Importiere globale Hilfsfunktionen aus deinen Modulen
+  import { PLAYERS, savePlayers, seedPlayersIfEmpty, watchPlayers, watchUsedCells } from './sync.js';
+  import { renderBoard, applyUsedCells } from './board.js';
+
+  let currentPlayers = PLAYERS || [];
+  let nextId = currentPlayers.length + 1;
 
   const camrow = document.getElementById('camrow');
   const hostRows = document.getElementById('host-rows');
 
   function renderCamRow(){
     camrow.innerHTML = '';
-    PLAYERS.forEach(p => {
+    currentPlayers.forEach(p => {
       const tile = document.createElement('div');
       tile.className = 'cam-tile';
 
@@ -65,7 +68,7 @@
 
       const placeholder = document.createElement('div');
       placeholder.className = 'cam-placeholder';
-      placeholder.textContent = p.name.charAt(0).toUpperCase();
+      placeholder.textContent = p.name ? p.name.charAt(0).toUpperCase() : '?';
 
       const video = document.createElement('video');
       video.autoplay = true;
@@ -117,7 +120,7 @@
 
   function renderHostRows(){
     hostRows.innerHTML = '';
-    PLAYERS.forEach(p => {
+    currentPlayers.forEach(p => {
       const row = document.createElement('div');
       row.className = 'host-row';
 
@@ -126,13 +129,13 @@
       nameInput.value = p.name;
       nameInput.addEventListener('change', e => {
         p.name = e.target.value;
-        savePlayers(PLAYERS);
+        savePlayers(currentPlayers);
       });
 
       const minus = document.createElement('button');
       minus.className = 'score-btn';
       minus.textContent = '−';
-      minus.addEventListener('click', () => { p.score -= 100; savePlayers(PLAYERS); });
+      minus.addEventListener('click', () => { p.score -= 100; savePlayers(currentPlayers); });
 
       const scoreVal = document.createElement('span');
       scoreVal.className = 'host-score-value';
@@ -141,14 +144,14 @@
       const plus = document.createElement('button');
       plus.className = 'score-btn';
       plus.textContent = '+';
-      plus.addEventListener('click', () => { p.score += 100; savePlayers(PLAYERS); });
+      plus.addEventListener('click', () => { p.score += 100; savePlayers(currentPlayers); });
 
       const remove = document.createElement('button');
       remove.className = 'remove-btn';
       remove.textContent = 'Entfernen';
       remove.addEventListener('click', () => {
-        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
-        savePlayers(PLAYERS);
+        currentPlayers = currentPlayers.filter(x => x.id !== p.id);
+        savePlayers(currentPlayers);
       });
 
       row.appendChild(nameInput);
@@ -161,20 +164,22 @@
   }
 
   document.getElementById('add-team').addEventListener('click', () => {
-    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0 });
-    savePlayers(PLAYERS);
+    currentPlayers.push({ id: nextId++, name: `Spieler ${currentPlayers.length + 1}`, score: 0 });
+    savePlayers(currentPlayers);
   });
 
-  // Board ist hier klickbar — der Host löst Fragen aus.
+  // Board initialisieren
   renderBoard(true);
   seedPlayersIfEmpty();
 
-  // Von Firebase kommende Änderungen (z. B. von dir selbst gespeichert) wieder anzeigen:
+  // Echtzeit-Synchronisation mit Firebase
   watchPlayers(players => {
-    PLAYERS = players;
-    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
-    renderCamRow();
-    renderHostRows();
+    if (players) {
+      currentPlayers = players;
+      nextId = Math.max(0, ...currentPlayers.map(p => p.id)) + 1;
+      renderCamRow();
+      renderHostRows();
+    }
   });
   watchUsedCells(applyUsedCells);
 </script>
