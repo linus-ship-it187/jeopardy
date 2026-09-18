@@ -2,682 +2,299 @@
 <html lang="de">
 
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeopardy</title>
 
-<meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
-
-<title>Jeopardy</title>
-
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link
-  rel="preconnect"
-  href="https://fonts.gstatic.com"
-  crossorigin
->
-
-<link
-  href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap"
-  rel="stylesheet"
->
-
-<link
-  rel="stylesheet"
-  href="shared.css"
->
-
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
+  <link rel="stylesheet" href="shared.css">
 </head>
 
-
 <body>
-
 
   <!-- ======================================================
        HEADER
   ======================================================= -->
-
   <div class="header">
-
     <svg viewBox="0 0 24 24" fill="currentColor">
-      <path
-        d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z"
-        transform="translate(1.4)"
-      />
+      <path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z" transform="translate(1.4)" />
     </svg>
 
     <h1>Jeopardy</h1>
 
     <svg viewBox="0 0 24 24" fill="currentColor">
-      <path
-        d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z"
-        transform="translate(1.4)"
-      />
+      <path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2-6-4.4 6.8-2.2z" transform="translate(1.4)" />
     </svg>
-
   </div>
 
 
   <!-- ======================================================
        SPIELER AUSWÄHLEN
   ======================================================= -->
-
-  <div
-    id="player-select-box"
-    style="
-      max-width:1080px;
-      margin:0 auto 20px;
-      text-align:center;
-      padding:15px;
-    "
-  >
-
-    <label
-      for="player-select"
-      style="
-        font-weight:800;
-        margin-right:10px;
-      "
-    >
+  <div id="player-select-box" style="max-width:1080px; margin:0 auto 20px; text-align:center; padding:15px;">
+    <label for="player-select" style="font-weight:800; margin-right:10px;">
       Du bist:
     </label>
 
-    <select
-      id="player-select"
-      style="
-        padding:10px 15px;
-        border-radius:10px;
-        font-size:16px;
-      "
-    >
-
-      <option value="">
-        Spieler auswählen
-      </option>
-
+    <select id="player-select" style="padding:10px 15px; border-radius:10px; font-size:16px;">
+      <option value="">Spieler auswählen</option>
     </select>
-
   </div>
 
 
   <!-- ======================================================
        SPIELFELD
   ======================================================= -->
-
   <div class="board">
-
-    <div
-      class="grid"
-      id="board-grid"
-    ></div>
-
+    <div class="grid" id="board-grid"></div>
   </div>
 
 
   <!-- ======================================================
        KAMERAS
   ======================================================= -->
-
-  <div
-    class="camrow"
-    id="camrow"
-  ></div>
+  <div class="camrow" id="camrow"></div>
 
 
   <!-- ======================================================
-       MODAL
+       MODAL (Fragenanzeige)
   ======================================================= -->
-
-  <div
-    class="overlay"
-    id="overlay"
-    hidden
-  >
-
+  <div class="overlay" id="overlay" hidden>
     <div class="modal">
-
-      <div
-        class="eyebrow"
-        id="modal-meta"
-      ></div>
-
-      <p
-        class="prompt"
-        id="modal-question"
-      ></p>
-
-      <p
-        class="answer"
-        id="modal-answer"
-        hidden
-      ></p>
+      <div class="eyebrow" id="modal-meta"></div>
+      <p class="prompt" id="modal-question"></p>
+      <p class="answer" id="modal-answer" hidden></p>
 
       <div class="modal-actions">
-
-        <button
-          class="btn-primary"
-          id="reveal-btn"
-        >
-          Antwort zeigen
-        </button>
-
-        <button
-          class="btn-ghost"
-          id="close-btn"
-        >
-          Schließen
-        </button>
-
+        <button class="btn-primary" id="reveal-btn">Antwort zeigen</button>
+        <button class="btn-ghost" id="close-btn">Schließen</button>
       </div>
-
     </div>
-
   </div>
 
 
-<script src="firebase-config.js"></script>
-<script src="game-data.js"></script>
-<script src="sync.js"></script>
-<script src="board.js"></script>
+  <!-- ======================================================
+       JAVASCRIPT MODUL
+  ======================================================= -->
+  <script type="module">
+    import { 
+      watchPlayers, 
+      watchUsedCells, 
+      watchActiveQuestion, 
+      initCameraSync, 
+      startLocalCamera, 
+      stopLocalCamera 
+    } from './sync.js';
+    import { renderBoard, applyUsedCells, openModal } from './board.js';
 
+    // ========================================================
+    // VARIABLEN & HTML-ELEMENTE
+    // ========================================================
+    const camrow = document.getElementById('camrow');
+    const playerSelect = document.getElementById('player-select');
+    const playerSelectBox = document.getElementById('player-select-box');
 
-<script>
+    let PLAYERS = [];
+    let localPlayerId = null;
+    const remoteStreams = {};
 
-  // ========================================================
-  // VARIABLEN
-  // ========================================================
+    // Spieler-ID aus der URL auslesen (?player=1)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlPlayerId = urlParams.get('player');
 
-  const camrow =
-    document.getElementById('camrow');
+    if (urlPlayerId !== null) {
+      localPlayerId = Number(urlPlayerId);
+    }
 
-  const playerSelect =
-    document.getElementById(
-      'player-select'
-    );
+    // ========================================================
+    // SPIELER AUSWAHL DROPDOWN
+    // ========================================================
+    function renderPlayerSelect() {
+      playerSelect.innerHTML = '<option value="">Spieler auswählen</option>';
 
-  const playerSelectBox =
-    document.getElementById(
-      'player-select-box'
-    );
+      PLAYERS.forEach(player => {
+        const option = document.createElement('option');
+        option.value = player.id;
+        option.textContent = player.name;
 
+        if (Number(player.id) === Number(localPlayerId)) {
+          option.selected = true;
+        }
 
-  // Aktueller Spieler
-  let localPlayerId = null;
+        playerSelect.appendChild(option);
+      });
 
-
-  // Empfangene Kameras
-  const remoteStreams = {};
-
-
-  // ========================================================
-  // SPIELER-ID AUS URL
-  //
-  // Beispiel:
-  //
-  // index.html?player=1
-  // index.html?player=2
-  // index.html?player=3
-  //
-  // ========================================================
-
-  const urlParams =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const urlPlayerId =
-    urlParams.get('player');
-
-
-  if (urlPlayerId !== null) {
-
-    localPlayerId =
-      Number(urlPlayerId);
-
-  }
-
-
-  // ========================================================
-  // SPIELER AUSWAHL
-  // ========================================================
-
-  function renderPlayerSelect() {
-
-    playerSelect.innerHTML =
-      '<option value="">Spieler auswählen</option>';
-
-
-    PLAYERS.forEach(player => {
-
-      const option =
-        document.createElement(
-          'option'
-        );
-
-      option.value =
-        player.id;
-
-      option.textContent =
-        player.name;
-
-
-      if (
-        Number(player.id) ===
-        Number(localPlayerId)
-      ) {
-
-        option.selected = true;
+      if (localPlayerId !== null) {
+        playerSelectBox.style.display = 'none';
+      } else {
+        playerSelectBox.style.display = 'block';
       }
+    }
 
+    playerSelect.addEventListener('change', () => {
+      if (!playerSelect.value) return;
 
-      playerSelect.appendChild(
-        option
-      );
+      localPlayerId = Number(playerSelect.value);
 
+      // Seite neu laden mit der neu gewählten Spieler-ID
+      const newUrl = window.location.pathname + '?player=' + encodeURIComponent(localPlayerId);
+      window.location.href = newUrl;
     });
 
+    // ========================================================
+    // KAMERAS RENDERN
+    // ========================================================
+    function renderCamRow() {
+      camrow.innerHTML = '';
 
-    if (localPlayerId !== null) {
+      PLAYERS.forEach(player => {
+        const tile = document.createElement('div');
+        tile.className = 'cam-tile';
 
-      playerSelectBox.style.display =
-        'none';
+        const videoWrap = document.createElement('div');
+        videoWrap.className = 'cam-video-wrap';
 
-    } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'cam-placeholder';
+        placeholder.textContent = (player.name || '?').charAt(0).toUpperCase();
 
-      playerSelectBox.style.display =
-        'block';
-    }
-  }
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        video.style.display = 'none';
 
+        // Bereits empfangener Stream für diesen Spieler vorhanden?
+        if (remoteStreams[player.id]) {
+          video.srcObject = remoteStreams[player.id];
+          video.style.display = 'block';
+          placeholder.style.display = 'none';
+        }
 
-  playerSelect.addEventListener(
-    'change',
-    () => {
+        const isMe = Number(player.id) === Number(localPlayerId);
 
-      if (!playerSelect.value) {
-        return;
-      }
+        if (isMe) {
+          const camBtn = document.createElement('button');
+          camBtn.className = 'cam-toggle';
+          camBtn.textContent = 'Kamera an';
 
-      localPlayerId =
-        Number(playerSelect.value);
-
-
-      // Seite mit Spieler-ID neu laden.
-      // Dadurch wird die Kamera eindeutig
-      // diesem Spieler zugeordnet.
-
-      const newUrl =
-        window.location.pathname +
-        '?player=' +
-        encodeURIComponent(
-          localPlayerId
-        );
-
-      window.location.href =
-        newUrl;
-    }
-  );
-
-
-  // ========================================================
-  // KAMERAS RENDERN
-  // ========================================================
-
-  function renderCamRow() {
-
-    camrow.innerHTML = '';
-
-
-    PLAYERS.forEach(player => {
-
-      const tile =
-        document.createElement(
-          'div'
-        );
-
-      tile.className =
-        'cam-tile';
-
-
-      const videoWrap =
-        document.createElement(
-          'div'
-        );
-
-      videoWrap.className =
-        'cam-video-wrap';
-
-
-      const placeholder =
-        document.createElement(
-          'div'
-        );
-
-      placeholder.className =
-        'cam-placeholder';
-
-      placeholder.textContent =
-        player.name
-          .charAt(0)
-          .toUpperCase();
-
-
-      const video =
-        document.createElement(
-          'video'
-        );
-
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true;
-
-      video.style.display =
-        'none';
-
-
-      // ----------------------------------------------------
-      // Kamera dieses Spielers bereits empfangen?
-      // ----------------------------------------------------
-
-      if (remoteStreams[player.id]) {
-
-        video.srcObject =
-          remoteStreams[player.id];
-
-        video.style.display =
-          'block';
-
-        placeholder.style.display =
-          'none';
-      }
-
-
-      // ----------------------------------------------------
-      // Eigene Kamera
-      // ----------------------------------------------------
-
-      const isMe =
-        Number(player.id) ===
-        Number(localPlayerId);
-
-
-      if (isMe) {
-
-        const camBtn =
-          document.createElement(
-            'button'
-          );
-
-        camBtn.className =
-          'cam-toggle';
-
-        camBtn.textContent =
-          'Kamera an';
-
-
-        camBtn.addEventListener(
-          'click',
-          async () => {
-
-            // Kamera läuft bereits
+          camBtn.addEventListener('click', async () => {
+            // Kamera ausschalten
             if (video.srcObject) {
-
               stopLocalCamera();
-
-              video.srcObject =
-                null;
-
-              video.style.display =
-                'none';
-
-              placeholder.style.display =
-                'flex';
-
-              camBtn.textContent =
-                'Kamera an';
-
+              video.srcObject = null;
+              video.style.display = 'none';
+              placeholder.style.display = 'flex';
+              camBtn.textContent = 'Kamera an';
               return;
             }
 
-
+            // Kamera einschalten
             try {
-
-              const stream =
-                await startLocalCamera();
-
-
-              // Eigenes Bild sofort anzeigen
-              video.srcObject =
-                stream;
-
-              video.style.display =
-                'block';
-
-              placeholder.style.display =
-                'none';
-
-              camBtn.textContent =
-                'Kamera aus';
-
+              const stream = await startLocalCamera();
+              video.srcObject = stream;
+              video.style.display = 'block';
+              placeholder.style.display = 'none';
+              camBtn.textContent = 'Kamera aus';
             } catch (err) {
-
-              alert(
-                'Kamera konnte nicht gestartet werden: ' +
-                err.message
-              );
+              alert('Kamera konnte nicht gestartet werden: ' + err.message);
             }
+          });
 
+          videoWrap.appendChild(camBtn);
+        } else {
+          if (remoteStreams[player.id]) {
+            const status = document.createElement('div');
+            status.style.position = 'absolute';
+            status.style.bottom = '8px';
+            status.style.left = '8px';
+            status.style.background = 'rgba(0,0,0,.7)';
+            status.style.color = 'white';
+            status.style.padding = '4px 8px';
+            status.style.borderRadius = '6px';
+            status.style.fontSize = '12px';
+            status.textContent = 'LIVE';
+
+            videoWrap.appendChild(status);
           }
-        );
+        }
 
+        videoWrap.insertBefore(placeholder, videoWrap.firstChild);
+        videoWrap.insertBefore(video, videoWrap.children[1]);
 
-        videoWrap.appendChild(
-          camBtn
-        );
+        // Footer mit Name und Punkten
+        const footer = document.createElement('div');
+        footer.className = 'cam-footer';
 
+        const nameEl = document.createElement('span');
+        nameEl.className = 'cam-name';
+        nameEl.textContent = player.name;
+
+        const scoreEl = document.createElement('span');
+        scoreEl.className = 'cam-score';
+        scoreEl.textContent = player.score;
+
+        footer.appendChild(nameEl);
+        footer.appendChild(scoreEl);
+
+        tile.appendChild(videoWrap);
+        tile.appendChild(footer);
+
+        camrow.appendChild(tile);
+      });
+    }
+
+    // ========================================================
+    // SPIELFELD RENDERN (nicht-interaktiv für Spieler)
+    // ========================================================
+    renderBoard(false);
+
+    // ========================================================
+    // FIREBASE LISTENERS
+    // ========================================================
+
+    // 1. Spieler-Synchronisation
+    watchPlayers(players => {
+      if (!players) {
+        PLAYERS = [];
       } else {
-
-        // Bei anderen Spielern nur Status anzeigen
-
-        if (remoteStreams[player.id]) {
-
-          const status =
-            document.createElement(
-              'div'
-            );
-
-          status.style.position =
-            'absolute';
-
-          status.style.bottom =
-            '8px';
-
-          status.style.left =
-            '8px';
-
-          status.style.background =
-            'rgba(0,0,0,.7)';
-
-          status.style.color =
-            'white';
-
-          status.style.padding =
-            '4px 8px';
-
-          status.style.borderRadius =
-            '6px';
-
-          status.style.fontSize =
-            '12px';
-
-          status.textContent =
-            'LIVE';
-
-          videoWrap.appendChild(
-            status
-          );
-        }
-
+        PLAYERS = Array.isArray(players) ? players : Object.values(players);
       }
-
-
-      videoWrap.insertBefore(
-        placeholder,
-        videoWrap.firstChild
-      );
-
-      videoWrap.insertBefore(
-        video,
-        videoWrap.children[1]
-      );
-
-
-      // ----------------------------------------------------
-      // Footer
-      // ----------------------------------------------------
-
-      const footer =
-        document.createElement(
-          'div'
-        );
-
-      footer.className =
-        'cam-footer';
-
-
-      const nameEl =
-        document.createElement(
-          'span'
-        );
-
-      nameEl.className =
-        'cam-name';
-
-      nameEl.textContent =
-        player.name;
-
-
-      const scoreEl =
-        document.createElement(
-          'span'
-        );
-
-      scoreEl.className =
-        'cam-score';
-
-      scoreEl.textContent =
-        player.score;
-
-
-      footer.appendChild(
-        nameEl
-      );
-
-      footer.appendChild(
-        scoreEl
-      );
-
-
-      tile.appendChild(
-        videoWrap
-      );
-
-      tile.appendChild(
-        footer
-      );
-
-
-      camrow.appendChild(
-        tile
-      );
-
+      renderPlayerSelect();
+      renderCamRow();
     });
-  }
 
+    // 2. Benutzte Felder synchronisieren
+    watchUsedCells(applyUsedCells);
 
-  // ========================================================
-  // BOARD
-  // ========================================================
-
-  renderBoard(false);
-
-
-  // ========================================================
-  // SPIELER LADEN
-  // ========================================================
-
-  watchPlayers(players => {
-
-    PLAYERS =
-      Array.isArray(players)
-        ? players
-        : Object.values(players);
-
-
-    renderPlayerSelect();
-
-    renderCamRow();
-
-  });
-
-
-  // ========================================================
-  // BENUTZTE FRAGEN
-  // ========================================================
-
-  watchUsedCells(
-    applyUsedCells
-  );
-
-
-  // ========================================================
-  // WEBRTC STARTEN
-  // ========================================================
-
-  initCameraSync({
-
-    role: 'player',
-
-    playerId: localPlayerId,
-
-    onRemoteStream:
-      (playerId, stream) => {
-
-        if (playerId == null) {
-          return;
-        }
-
-
-        // Eigene Kamera nicht als Remote speichern
-        if (
-          Number(playerId) ===
-          Number(localPlayerId)
-        ) {
-
-          return;
-        }
-
-
-        remoteStreams[playerId] =
-          stream;
-
-
-        renderCamRow();
-
+    // 3. Aktive Frage synchronisieren (Öffnet Modal automatisch)
+    watchActiveQuestion(qData => {
+      const overlay = document.getElementById('overlay');
+      if (qData) {
+        openModal(qData);
+      } else if (overlay) {
+        overlay.hidden = true;
       }
+    });
 
-  });
+    // ========================================================
+    // WEBRTC KAMERA-SYNC
+    // ========================================================
+    initCameraSync({
+      role: 'player',
+      playerId: localPlayerId,
+      onRemoteStream: (playerId, stream) => {
+        if (playerId == null) return;
+        if (Number(playerId) === Number(localPlayerId)) return;
 
-</script>
+        remoteStreams[playerId] = stream;
+        renderCamRow();
+      }
+    });
+  </script>
 
 </body>
 </html>
