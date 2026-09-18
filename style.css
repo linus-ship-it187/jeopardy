@@ -1,0 +1,445 @@
+/* =========================================
+   STREAMER JEOPARDY - DESIGN
+   1920 x 1080
+   ========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 20%, #123c91 0%, #071b4d 35%, #020817 100%);
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* =========================================
+   HINTERGRUND
+   ========================================= */
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background:
+        linear-gradient(135deg, transparent 70%, rgba(0, 132, 255, 0.12)),
+        linear-gradient(45deg, transparent 70%, rgba(0, 210, 255, 0.08));
+
+    opacity: 0.9;
+}
+
+
+/* =========================================
+   TITEL
+   ========================================= */
+
+h1 {
+    position: relative;
+
+    margin: 25px 0 20px;
+
+    text-align: center;
+
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 0 5px #ffffff,
+        0 0 15px #00aaff,
+        0 0 30px #0077ff,
+        0 0 60px #0055ff;
+}
+
+
+/* =========================================
+   SPIELER
+   ========================================= */
+
+h2 {
+    color: #ffffff;
+    text-align: center;
+
+    text-transform: uppercase;
+    letter-spacing: 2px;
+
+    text-shadow:
+        0 0 10px #008cff;
+}
+
+
+/* =========================================
+   SPIELER-TEXTE
+   ========================================= */
+
+p {
+    display: inline-block;
+
+    min-width: 180px;
+    margin: 5px;
+
+    padding: 12px 20px;
+
+    border: 2px solid #008cff;
+    border-radius: 12px;
+
+    background: rgba(0, 80, 180, 0.35);
+
+    color: white;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    box-shadow:
+        0 0 10px rgba(0, 136, 255, 0.5),
+        inset 0 0 15px rgba(0, 136, 255, 0.15);
+}
+
+
+/* =========================================
+   JEOPARDY-BUTTONS
+   ========================================= */
+
+button {
+    position: relative;
+
+    width: 250px;
+    height: 72px;
+
+    margin: 8px;
+
+    border: 2px solid #008cff;
+    border-radius: 40px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(20, 105, 220, 0.95),
+            rgba(5, 55, 150, 0.95)
+        );
+
+    color: #ffffff;
+
+    font-size: 30px;
+    font-weight: 900;
+
+    cursor: pointer;
+
+    text-shadow:
+        0 0 8px #ffffff;
+
+    box-shadow:
+        0 0 8px #0077ff,
+        0 0 20px rgba(0, 119, 255, 0.6),
+        inset 0 0 15px rgba(0, 200, 255, 0.2);
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+
+/* Hover-Effekt */
+
+button:hover {
+    transform: scale(1.04);
+
+    background:
+        linear-gradient(
+            180deg,
+            #087cff,
+            #0646c7
+        );
+
+    box-shadow:
+        0 0 10px #00aaff,
+        0 0 30px #0077ff,
+        0 0 50px rgba(0, 170, 255, 0.5);
+}
+
+
+/* Beim Klicken */
+
+button:active {
+    transform: scale(0.97);
+}
+
+
+/* =========================================
+   SPÄTER FÜR DAS JEOPARDY-SPIEL
+   ========================================= */
+
+.game-board {
+    position: relative;
+
+    width: 94%;
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: 14px;
+}
+
+
+/* Eine Kategorie */
+
+.category {
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+/* Kategorie-Titel */
+
+.category-title {
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px;
+
+    border: 2px solid #008cff;
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 90, 190, 0.95),
+            rgba(4, 40, 110, 0.95)
+        );
+
+    color: white;
+
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+
+    text-shadow:
+        0 0 8px #ffffff;
+
+    box-shadow:
+        0 0 10px rgba(0, 140, 255, 0.7),
+        inset 0 0 15px rgba(0, 190, 255, 0.15);
+}
+
+
+/* Punkte */
+
+.points {
+    height: 68px;
+    width: 100%;
+
+    margin: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid #008cff;
+    border-radius: 35px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #155fd1,
+            #073b9f
+        );
+
+    color: white;
+
+    font-size: 30px;
+    font-weight: 900;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 8px #006eff,
+        0 0 20px rgba(0, 130, 255, 0.5);
+
+    transition: 0.15s ease;
+}
+
+
+.points:hover {
+    transform: scale(1.04);
+
+    box-shadow:
+        0 0 12px #00b7ff,
+        0 0 30px #0077ff;
+}
+
+
+/* Bereits benutzte Frage */
+
+.points.used {
+    opacity: 0.25;
+    cursor: default;
+    box-shadow: none;
+}
+
+.points.used:hover {
+    transform: none;
+}
+
+
+/* =========================================
+   STREAMER-BEREICH
+   ========================================= */
+
+.players {
+    position: absolute;
+
+    left: 2%;
+    right: 2%;
+    bottom: 25px;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: 14px;
+}
+
+
+/* Streamer-Karte */
+
+.player {
+    position: relative;
+
+    height: 145px;
+
+    overflow: hidden;
+
+    border: 3px solid #008cff;
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 80, 170, 0.8),
+            rgba(2, 25, 70, 0.95)
+        );
+
+    box-shadow:
+        0 0 10px #0077ff,
+        0 0 25px rgba(0, 119, 255, 0.45);
+}
+
+
+/* Kamera */
+
+.player-camera {
+    position: absolute;
+
+    inset: 0;
+
+    background: #050b18;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: rgba(255, 255, 255, 0.4);
+}
+
+
+/* Name + Punkte */
+
+.player-info {
+    position: absolute;
+
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 15px;
+
+    border: 2px solid #008cff;
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #0757c9,
+            #06358f
+        );
+
+    font-size: 19px;
+    font-weight: 900;
+
+    box-shadow:
+        0 0 12px rgba(0, 140, 255, 0.6);
+}
+
+
+/* Punktestand */
+
+.player-score {
+    font-size: 20px;
+
+    text-shadow:
+        0 0 8px #ffffff;
+}
+
+
+/* =========================================
+   BLAUES LEUCHTEN
+   ========================================= */
+
+.glow {
+    text-shadow:
+        0 0 5px #ffffff,
+        0 0 15px #00aaff,
+        0 0 30px #0077ff;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 1200px) {
+
+    h1 {
+        font-size: 50px;
+    }
+
+    .category-title {
+        font-size: 17px;
+    }
+
+    .points {
+        height: 55px;
+        font-size: 24px;
+    }
+
+    .players {
+        gap: 8px;
+    }
+}
