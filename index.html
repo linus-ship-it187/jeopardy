@@ -1,193 +1,105 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Streamer Jeopardy</title>
-
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeopardy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
 </head>
-
 <body>
 
-    <!-- =====================================
-         TITEL
-         ===================================== -->
+  <div class="header">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
+    <h1>Jeopardy</h1>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
+  </div>
 
-    <h1>JEOPARDY</h1>
+  <div class="board">
+    <div class="grid" id="board-grid"></div>
+  </div>
 
+  <div class="camrow" id="camrow"></div>
 
-    <!-- =====================================
-         JEOPARDY SPIELFELD
-         ===================================== -->
-
-    <div class="game-board">
-
-        <!-- KATEGORIE 1 -->
-        <div class="category">
-
-            <div class="category-title">
-                Allgemeinwissen
-            </div>
-
-            <button class="points">100</button>
-            <button class="points">200</button>
-            <button class="points">300</button>
-            <button class="points">400</button>
-            <button class="points">500</button>
-
-        </div>
-
-
-        <!-- KATEGORIE 2 -->
-        <div class="category">
-
-            <div class="category-title">
-                Gaming
-            </div>
-
-            <button class="points">100</button>
-            <button class="points">200</button>
-            <button class="points">300</button>
-            <button class="points">400</button>
-            <button class="points">500</button>
-
-        </div>
-
-
-        <!-- KATEGORIE 3 -->
-        <div class="category">
-
-            <div class="category-title">
-                Musik
-            </div>
-
-            <button class="points">100</button>
-            <button class="points">200</button>
-            <button class="points">300</button>
-            <button class="points">400</button>
-            <button class="points">500</button>
-
-        </div>
-
-
-        <!-- KATEGORIE 4 -->
-        <div class="category">
-
-            <div class="category-title">
-                Filme & Serien
-            </div>
-
-            <button class="points">100</button>
-            <button class="points">200</button>
-            <button class="points">300</button>
-            <button class="points">400</button>
-            <button class="points">500</button>
-
-        </div>
-
-
-        <!-- KATEGORIE 5 -->
-        <div class="category">
-
-            <div class="category-title">
-                Random
-            </div>
-
-            <button class="points">100</button>
-            <button class="points">200</button>
-            <button class="points">300</button>
-            <button class="points">400</button>
-            <button class="points">500</button>
-
-        </div>
-
+  <div class="overlay" id="overlay" hidden>
+    <div class="modal">
+      <div class="eyebrow" id="modal-meta"></div>
+      <p class="prompt" id="modal-question"></p>
+      <p class="answer" id="modal-answer" hidden></p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="reveal-btn">Antwort zeigen</button>
+        <button class="btn-ghost" id="close-btn">Schließen</button>
+      </div>
     </div>
+  </div>
 
+<script src="game-data.js"></script>
+<script src="board.js"></script>
+<script>
+  // Facecams: nur Kamera + Name, keine Punkte-Steuerung auf dieser Seite.
+  const camrow = document.getElementById('camrow');
 
-    <!-- =====================================
-         5 STREAMER
-         ===================================== -->
+  function renderCamRow(){
+    camrow.innerHTML = '';
+    PLAYERS.forEach(p => {
+      const tile = document.createElement('div');
+      tile.className = 'cam-tile';
 
-    <div class="players">
+      const videoWrap = document.createElement('div');
+      videoWrap.className = 'cam-video-wrap';
 
+      const placeholder = document.createElement('div');
+      placeholder.className = 'cam-placeholder';
+      placeholder.textContent = p.name.charAt(0).toUpperCase();
 
-        <!-- STREAMER 1 -->
-        <div class="player">
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
 
-            <div class="player-camera">
-                CAM 1
-            </div>
+      const camBtn = document.createElement('button');
+      camBtn.className = 'cam-toggle';
+      camBtn.textContent = 'Kamera an';
+      camBtn.addEventListener('click', async () => {
+        if (video.style.display === 'block') {
+          video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
+          video.style.display = 'none';
+          placeholder.style.display = 'flex';
+          camBtn.textContent = 'Kamera an';
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+          video.style.display = 'block';
+          placeholder.style.display = 'none';
+          camBtn.textContent = 'Kamera aus';
+        } catch (err) {
+          alert('Kamera konnte nicht gestartet werden: ' + err.message);
+        }
+      });
 
-            <div class="player-info">
-                <span>Niek-0</span>
-                <span class="player-score">0</span>
-            </div>
+      videoWrap.appendChild(placeholder);
+      videoWrap.appendChild(video);
+      videoWrap.appendChild(camBtn);
 
-        </div>
+      const footer = document.createElement('div');
+      footer.className = 'cam-footer';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'cam-name';
+      nameEl.textContent = p.name;
+      footer.appendChild(nameEl);
 
+      tile.appendChild(videoWrap);
+      tile.appendChild(footer);
+      camrow.appendChild(tile);
+    });
+  }
 
-        <!-- STREAMER 2 -->
-        <div class="player">
-
-            <div class="player-camera">
-                CAM 2
-            </div>
-
-            <div class="player-info">
-                <span>Basti-100</span>
-                <span class="player-score">0</span>
-            </div>
-
-        </div>
-
-
-        <!-- STREAMER 3 -->
-        <div class="player">
-
-            <div class="player-camera">
-                CAM 3
-            </div>
-
-            <div class="player-info">
-                <span>Kevin-200</span>
-                <span class="player-score">0</span>
-            </div>
-
-        </div>
-
-
-        <!-- STREAMER 4 -->
-        <div class="player">
-
-            <div class="player-camera">
-                CAM 4
-            </div>
-
-            <div class="player-info">
-                <span>Lara-300</span>
-                <span class="player-score">0</span>
-            </div>
-
-        </div>
-
-
-        <!-- STREAMER 5 -->
-        <div class="player">
-
-            <div class="player-camera">
-                CAM 5
-            </div>
-
-            <div class="player-info">
-                <span>Tobias-400</span>
-                <span class="player-score">0</span>
-            </div>
-
-        </div>
-
-    </div>
-
+  renderCamRow();
+</script>
 </body>
 </html>
