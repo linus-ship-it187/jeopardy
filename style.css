@@ -1,1 +1,37 @@
+body {
+    margin: 0;
+    background: #111827;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
 
+h1 {
+    font-size: 50px;
+    margin-top: 40px;
+}
+
+h2 {
+    font-size: 30px;
+}
+
+p {
+    font-size: 20px;
+}
+
+button {
+    width: 150px;
+    height: 80px;
+    margin: 10px;
+    font-size: 30px;
+    font-weight: bold;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3b82f6;
+}
