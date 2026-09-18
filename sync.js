@@ -1,51 +1,39 @@
-import { db } from './firebase-config.js';
-import { ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+// ---- Sync-Helfer: verbindet Board & Punktestand mit der Firebase Realtime Database ----
 
-// Standard-Spielerliste beim Start
-export let PLAYERS = [
-  { id: 1, name: 'Spieler 1', score: 0 },
-  { id: 2, name: 'Spieler 2', score: 0 }
-];
-
-// Spieler in Firebase speichern
-export function savePlayers(players) {
-  set(ref(db, 'game/players'), players)
-    .catch(err => console.error("Fehler beim Speichern der Spieler:", err));
+function cellKey(catIndex, value){
+  return catIndex + '_' + value;
 }
 
-// Erstellt Standard-Spieler, falls die Datenbank leer ist
-export function seedPlayersIfEmpty() {
-  const playersRef = ref(db, 'game/players');
-  onValue(playersRef, (snapshot) => {
-    if (!snapshot.exists()) {
-      savePlayers(PLAYERS);
-    }
-  }, { onlyOnce: true });
-}
-
-// Horcht auf Änderungen an den Spielern (Live-Updates)
-export function watchPlayers(callback) {
-  const playersRef = ref(db, 'game/players');
-  onValue(playersRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      PLAYERS = data;
-      callback(data);
+// Schreibt die Ausgangs-Spielerliste einmalig in die Datenbank, falls dort noch nichts steht.
+function seedPlayersIfEmpty(){
+  db.ref('players').once('value').then(snap => {
+    if (!snap.exists()) {
+      db.ref('players').set(PLAYERS);
     }
   });
 }
 
-// Horcht auf benutzte Quiz-Felder (Live-Updates)
-export function watchUsedCells(callback) {
-  const usedRef = ref(db, 'game/usedCells');
-  onValue(usedRef, (snapshot) => {
-    const data = snapshot.val();
-    callback(data || {});
+// Ruft callback(playersArray) jedes Mal auf, wenn sich die Spielerliste in der DB ändert.
+function watchPlayers(callback){
+  db.ref('players').on('value', snap => {
+    const val = snap.val();
+    if (val) callback(val);
   });
 }
 
-// Speichert ein benutztes Quiz-Feld
-export function markCellUsed(cellId) {
-  set(ref(db, `game/usedCells/${cellId}`), true)
-    .catch(err => console.error("Fehler beim Speichern des Feldes:", err));
+// Ruft callback(usedCellsObject) jedes Mal auf, wenn sich der Board-Status ändert.
+function watchUsedCells(callback){
+  db.ref('usedCells').on('value', snap => {
+    callback(snap.val() || {});
+  });
+}
+
+// Schreibt die komplette Spielerliste in die Datenbank (überschreibt den alten Stand).
+function savePlayers(players){
+  db.ref('players').set(players);
+}
+
+// Markiert eine einzelne Zelle als beantwortet.
+function markCellUsed(catIndex, value){
+  db.ref('usedCells/' + cellKey(catIndex, value)).set(true);
 }
