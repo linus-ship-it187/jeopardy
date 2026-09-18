@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <!-- Deine Dateien -->
+  <!-- Projekt-Dateien -->
   <script src="firebase-config.js"></script>
   <script src="game-data.js"></script>
   <script src="sync.js"></script>
@@ -21,20 +21,18 @@
 
 <body>
 
-  <!-- ======================================================
+  <!-- =====================================================
        HEADER
-  ======================================================= -->
+  ====================================================== -->
 
   <header class="topbar">
-
     <h1>🎤 Jeopardy – Host</h1>
-
   </header>
 
 
-  <!-- ======================================================
+  <!-- =====================================================
        KAMERAS
-  ======================================================= -->
+  ====================================================== -->
 
   <section class="camera-section">
 
@@ -51,11 +49,6 @@
 
       <h2>🎥 Kameras</h2>
 
-
-      <!-- ==================================================
-           HOST KAMERA BUTTON
-      =================================================== -->
-
       <button
         id="hostCameraBtn"
         type="button"
@@ -65,19 +58,14 @@
           opacity:1 !important;
           position:relative !important;
           z-index:99999 !important;
-
           padding:14px 24px !important;
           margin:10px !important;
-
           background:#3155d9 !important;
           color:#ffffff !important;
-
           border:2px solid #ffffff !important;
           border-radius:10px !important;
-
           font-size:18px !important;
           font-weight:bold !important;
-
           cursor:pointer !important;
         "
       >
@@ -87,18 +75,14 @@
     </div>
 
 
-    <!-- ====================================================
-         KAMERA-REIHE
-    ===================================================== -->
+    <!-- Kamera-Reihe -->
 
     <div
       id="camRow"
       class="cam-row"
     >
 
-      <!-- ==================================================
-           HOST-KAMERA
-      =================================================== -->
+      <!-- Host-Kamera -->
 
       <div
         class="cam-tile"
@@ -107,7 +91,6 @@
 
         <div class="cam-video-wrap">
 
-          <!-- Platzhalter -->
           <div
             id="hostCamPlaceholder"
             class="cam-placeholder"
@@ -117,8 +100,6 @@
             <span>Host</span>
           </div>
 
-
-          <!-- Lokales Host-Video -->
           <video
             id="hostLocalVideo"
             autoplay
@@ -134,7 +115,6 @@
 
         </div>
 
-
         <div class="cam-name">
           Host
         </div>
@@ -146,16 +126,15 @@
   </section>
 
 
-  <!-- ======================================================
+  <!-- =====================================================
        SPIELER
-  ======================================================= -->
+  ====================================================== -->
 
   <section class="host-panel">
 
     <div class="host-panel-header">
 
       <h2>👥 Spieler</h2>
-
 
       <button
         id="addPlayerBtn"
@@ -166,15 +145,14 @@
 
     </div>
 
-
     <div id="playerRows"></div>
 
   </section>
 
 
-  <!-- ======================================================
+  <!-- =====================================================
        SPIELBRETT
-  ======================================================= -->
+  ====================================================== -->
 
   <main>
 
@@ -183,9 +161,9 @@
   </main>
 
 
-  <!-- ======================================================
+  <!-- =====================================================
        FRAGE-MODAL
-  ======================================================= -->
+  ====================================================== -->
 
   <div
     id="questionModal"
@@ -203,7 +181,6 @@
         ✕
       </button>
 
-
       <div id="modalCategory"></div>
 
       <div id="modalValue"></div>
@@ -217,113 +194,86 @@
   </div>
 
 
-  <!-- ======================================================
-       JAVASCRIPT
-  ======================================================= -->
+  <!-- =====================================================
+       HOST JAVASCRIPT
+  ====================================================== -->
 
   <script>
 
-    // ======================================================
+    // =====================================================
     // VARIABLEN
-    // ======================================================
+    // =====================================================
 
     let nextId = 1;
-
     let hostCameraStream = null;
 
 
     const hostCameraBtn =
-      document.getElementById(
-        "hostCameraBtn"
-      );
-
+      document.getElementById("hostCameraBtn");
 
     const hostLocalVideo =
-      document.getElementById(
-        "hostLocalVideo"
-      );
-
+      document.getElementById("hostLocalVideo");
 
     const hostCamPlaceholder =
-      document.getElementById(
-        "hostCamPlaceholder"
-      );
-
+      document.getElementById("hostCamPlaceholder");
 
     const playerRows =
-      document.getElementById(
-        "playerRows"
-      );
-
+      document.getElementById("playerRows");
 
     const addPlayerBtn =
-      document.getElementById(
-        "addPlayerBtn"
-      );
+      document.getElementById("addPlayerBtn");
+
+    const camRow =
+      document.getElementById("camRow");
+
+    const hostCamTile =
+      document.getElementById("hostCamTile");
 
 
-    // ======================================================
-    // HOST-KAMERA EIN/AUS
-    // ======================================================
+    // =====================================================
+    // HOST-KAMERA EIN / AUS
+    // =====================================================
 
     async function toggleHostCamera() {
 
-      console.log(
-        "Host-Kamera Button gedrückt."
-      );
+      console.log("Host-Kamera Button gedrückt.");
 
 
-      // ====================================================
+      // ---------------------------------------------------
       // KAMERA AUSSCHALTEN
-      // ====================================================
+      // ---------------------------------------------------
 
       if (hostCameraStream) {
 
-        console.log(
-          "Host-Kamera wird ausgeschaltet."
-        );
-
+        console.log("Host-Kamera wird ausgeschaltet.");
 
         hostCameraStream
           .getTracks()
-          .forEach(track => {
-
-            track.stop();
-
-          });
-
+          .forEach(track => track.stop());
 
         hostCameraStream = null;
 
+        hostLocalVideo.srcObject = null;
 
-        hostLocalVideo.srcObject =
-          null;
+        hostLocalVideo.style.display = "none";
 
+        hostCamPlaceholder.style.display = "flex";
 
-        hostLocalVideo.style.display =
-          "none";
-
-
-        hostCamPlaceholder.style.display =
-          "flex";
-
+        hostCameraBtn.disabled = false;
 
         hostCameraBtn.textContent =
           "📷 Kamera einschalten";
 
-
         hostCameraBtn.style.background =
           "#3155d9";
 
-
         return;
-
       }
 
 
-      // ====================================================
-      // BROWSER KAMERA PRÜFEN
-      // ====================================================
+      // ---------------------------------------------------
+      // KAMERA-API PRÜFEN
+      // ---------------------------------------------------
 
       if (
         !navigator.mediaDevices ||
@@ -332,17 +282,16 @@
 
         alert(
           "Dein Browser unterstützt keinen Kamerazugriff.\n\n" +
-          "Bitte verwende einen aktuellen Chrome-, Edge- oder Firefox-Browser."
+          "Bitte benutze einen aktuellen Chrome-, Edge- oder Firefox-Browser."
         );
 
         return;
-
       }
 
 
-      // ====================================================
+      // ---------------------------------------------------
       // HTTPS PRÜFEN
-      // ====================================================
+      // ---------------------------------------------------
 
       if (
         !window.isSecureContext &&
@@ -351,28 +300,22 @@
 
         alert(
           "Die Kamera funktioniert nur über HTTPS oder localhost.\n\n" +
-          "Öffne die Seite über deine GitHub-Pages-Adresse."
+          "Öffne die Seite über deine HTTPS-GitHub-Pages-Adresse."
         );
 
         return;
-
       }
 
 
-      // ====================================================
+      // ---------------------------------------------------
       // KAMERA STARTEN
-      // ====================================================
+      // ---------------------------------------------------
 
       try {
 
-        console.log(
-          "Fordere Kamerazugriff an..."
-        );
+        console.log("Fordere Kamerazugriff an...");
 
-
-        hostCameraBtn.disabled =
-          true;
-
+        hostCameraBtn.disabled = true;
 
         hostCameraBtn.textContent =
           "⏳ Kamera wird gestartet...";
@@ -382,7 +325,6 @@
           await navigator.mediaDevices.getUserMedia({
 
             video: {
-
               width: {
                 ideal: 1280
               },
@@ -392,35 +334,30 @@
               },
 
               facingMode: "user"
-
             },
 
             audio: false
-
           });
 
 
         console.log(
-          "Kamera erfolgreich geöffnet!",
+          "Kamera erfolgreich geöffnet.",
           stream
         );
 
 
-        hostCameraStream =
-          stream;
+        hostCameraStream = stream;
 
 
-        // ==================================================
+        // -------------------------------------------------
         // VIDEO ANZEIGEN
-        // ==================================================
+        // -------------------------------------------------
 
         hostLocalVideo.srcObject =
-          stream;
-
+          hostCameraStream;
 
         hostLocalVideo.style.display =
           "block";
-
 
         hostCamPlaceholder.style.display =
           "none";
@@ -433,43 +370,27 @@
         } catch (error) {
 
           console.warn(
-            "Video play() Fehler:",
+            "Video konnte nicht automatisch abgespielt werden:",
             error
           );
 
         }
 
 
-        // ==================================================
-        // BUTTON AKTUALISIEREN
-        // ==================================================
+        // -------------------------------------------------
+        // BUTTON ÄNDERN
+        // -------------------------------------------------
 
-        hostCameraBtn.disabled =
-          false;
-
+        hostCameraBtn.disabled = false;
 
         hostCameraBtn.textContent =
           "🛑 Kamera ausschalten";
-
 
         hostCameraBtn.style.background =
           "#c62828";
 
 
-        console.log(
-          "HOST-KAMERA LÄUFT."
-        );
-
-
-        /*
-         * WICHTIG:
-         *
-         * Hier wird absichtlich NICHT
-         * startLocalCamera() aufgerufen.
-         *
-         * Damit testen wir zunächst ausschließlich,
-         * ob die Host-Kamera lokal funktioniert.
-         */
+        console.log("HOST-KAMERA LÄUFT.");
 
       } catch (error) {
 
@@ -479,77 +400,59 @@
         );
 
 
-        hostCameraStream =
-          null;
+        hostCameraStream = null;
 
+        hostLocalVideo.srcObject = null;
 
-        hostLocalVideo.srcObject =
-          null;
+        hostLocalVideo.style.display = "none";
 
+        hostCamPlaceholder.style.display = "flex";
 
-        hostLocalVideo.style.display =
-          "none";
-
-
-        hostCamPlaceholder.style.display =
-          "flex";
-
-
-        hostCameraBtn.disabled =
-          false;
-
+        hostCameraBtn.disabled = false;
 
         hostCameraBtn.textContent =
           "📷 Kamera einschalten";
 
-
         hostCameraBtn.style.background =
           "#3155d9";
 
-
-        // ==================================================
-        // FEHLER AUSWERTEN
-        // ==================================================
 
         let message =
           "Die Host-Kamera konnte nicht gestartet werden.\n\n";
 
 
         if (
-          error.name ===
-          "NotReadableError"
+          error.name === "NotReadableError"
         ) {
 
           message +=
-            "Die Kamera ist vorhanden, kann aber nicht gelesen werden.\n\n" +
+            "Die Kamera ist vorhanden, kann aber gerade nicht gelesen werden.\n\n" +
 
-            "Möglicherweise wird sie bereits benutzt von:\n" +
+            "Möglicherweise benutzt ein anderes Programm die Kamera:\n" +
             "• OBS\n" +
             "• Discord\n" +
             "• Teams\n" +
             "• Zoom\n" +
-            "• einem anderen Browser-Tab\n\n" +
+            "• anderer Browser-Tab\n\n" +
 
-            "Schließe diese Programme/Tabs und versuche es erneut.";
+            "Schließe diese Programme und versuche es erneut.";
 
         }
 
         else if (
-          error.name ===
-          "NotAllowedError"
+          error.name === "NotAllowedError"
         ) {
 
           message +=
             "Der Browser hat den Kamerazugriff blockiert.\n\n" +
 
-            "Klicke in der Browser-Adressleiste auf das Kamera-Symbol " +
+            "Klicke oben in der Browser-Adressleiste auf das Kamera-Symbol " +
             "und erlaube den Kamerazugriff.";
 
         }
 
         else if (
-          error.name ===
-          "NotFoundError"
+          error.name === "NotFoundError"
         ) {
 
           message +=
@@ -558,8 +461,7 @@
         }
 
         else if (
-          error.name ===
-          "SecurityError"
+          error.name === "SecurityError"
         ) {
 
           message +=
@@ -576,20 +478,18 @@
             error.name +
             "\n\n" +
             error.message;
-
         }
 
 
         alert(message);
-
       }
 
     }
 
 
-    // ======================================================
-    // BUTTON EVENT
-    // ======================================================
+    // =====================================================
+    // KAMERA-BUTTON
+    // =====================================================
 
     hostCameraBtn.addEventListener(
       "click",
@@ -597,9 +497,29 @@
     );
 
 
-    // ======================================================
-    // SPIELER DARSTELLEN
-    // ======================================================
+    // =====================================================
+    // HTML ESCAPEN
+    // =====================================================
+
+    function escapeHtml(text) {
+
+      return String(text)
+
+        .replaceAll("&", "&amp;")
+
+        .replaceAll("<", "&lt;")
+
+        .replaceAll(">", "&gt;")
+
+        .replaceAll('"', "&quot;")
+
+        .replaceAll("'", "&#039;");
+    }
+
+
+    // =====================================================
+    // SPIELER ANZEIGEN
+    // =====================================================
 
     function renderHostRows() {
 
@@ -609,32 +529,23 @@
       PLAYERS.forEach(player => {
 
         const row =
-          document.createElement(
-            "div"
-          );
-
+          document.createElement("div");
 
         row.className =
           "host-player-row";
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // NAME
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         const nameInput =
-          document.createElement(
-            "input"
-          );
+          document.createElement("input");
 
-
-        nameInput.type =
-          "text";
-
+        nameInput.type = "text";
 
         nameInput.value =
           player.name || "";
-
 
         nameInput.placeholder =
           "Spielername";
@@ -652,35 +563,25 @@
 
               player.name =
                 `Spieler ${player.id}`;
-
             }
 
 
-            savePlayers(
-              PLAYERS
-            );
-
+            savePlayers(PLAYERS);
           }
         );
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // PUNKTE
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         const scoreInput =
-          document.createElement(
-            "input"
-          );
+          document.createElement("input");
 
-
-        scoreInput.type =
-          "number";
-
+        scoreInput.type = "number";
 
         scoreInput.value =
           Number(player.score) || 0;
-
 
         scoreInput.placeholder =
           "Punkte";
@@ -691,32 +592,21 @@
           () => {
 
             player.score =
-              Number(
-                scoreInput.value
-              ) || 0;
+              Number(scoreInput.value) || 0;
 
-
-            savePlayers(
-              PLAYERS
-            );
-
+            savePlayers(PLAYERS);
           }
         );
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // LÖSCHEN
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         const deleteBtn =
-          document.createElement(
-            "button"
-          );
+          document.createElement("button");
 
-
-        deleteBtn.type =
-          "button";
-
+        deleteBtn.type = "button";
 
         deleteBtn.textContent =
           "🗑️ Löschen";
@@ -734,53 +624,37 @@
               );
 
 
-            savePlayers(
-              PLAYERS
-            );
-
+            savePlayers(PLAYERS);
 
             renderHostRows();
 
             renderCamRow();
-
           }
         );
 
 
-        row.appendChild(
-          nameInput
-        );
+        row.appendChild(nameInput);
 
+        row.appendChild(scoreInput);
 
-        row.appendChild(
-          scoreInput
-        );
+        row.appendChild(deleteBtn);
 
-
-        row.appendChild(
-          deleteBtn
-        );
-
-
-        playerRows.appendChild(
-          row
-        );
+        playerRows.appendChild(row);
 
       });
 
     }
 
 
-    // ======================================================
+    // =====================================================
     // SPIELER HINZUFÜGEN
-    // ======================================================
+    // =====================================================
 
     addPlayerBtn.addEventListener(
       "click",
       () => {
 
-        const id =
-          nextId++;
+        const id = nextId++;
 
 
         const newPlayer = {
@@ -795,15 +669,9 @@
         };
 
 
-        PLAYERS.push(
-          newPlayer
-        );
+        PLAYERS.push(newPlayer);
 
-
-        savePlayers(
-          PLAYERS
-        );
-
+        savePlayers(PLAYERS);
 
         renderHostRows();
 
@@ -813,108 +681,52 @@
     );
 
 
-    // ======================================================
-    // HTML ESCAPEN
-    // ======================================================
-
-    function escapeHtml(text) {
-
-      return String(text)
-
-        .replaceAll(
-          "&",
-          "&amp;"
-        )
-
-        .replaceAll(
-          "<",
-          "&lt;"
-        )
-
-        .replaceAll(
-          ">",
-          "&gt;"
-        )
-
-        .replaceAll(
-          '"',
-          "&quot;"
-        )
-
-        .replaceAll(
-          "'",
-          "&#039;"
-        );
-
-    }
-
-
-    // ======================================================
+    // =====================================================
     // KAMERA-ZEILE
-    // ======================================================
+    // =====================================================
 
     function renderCamRow() {
 
-      const camRow =
-        document.getElementById(
-          "camRow"
+      // ---------------------------------------------------
+      // Alle Spieler-Kacheln entfernen
+      // ---------------------------------------------------
+
+      const playerTiles =
+        camRow.querySelectorAll(
+          ".player-camera-tile"
         );
 
 
-      const hostTile =
-        document.getElementById(
-          "hostCamTile"
-        );
+      playerTiles.forEach(tile => {
+        tile.remove();
+      });
 
 
-      /*
-       * Spieler-Kacheln entfernen.
-       * Host-Kachel behalten.
-       */
-
-      camRow.innerHTML = "";
-
-
-      camRow.appendChild(
-        hostTile
-      );
-
-
-      // ----------------------------------------------------
-      // SPIELER-KAMERAS
-      // ----------------------------------------------------
+      // ---------------------------------------------------
+      // Spieler-Kameras erzeugen
+      // ---------------------------------------------------
 
       PLAYERS.forEach(player => {
 
         const tile =
-          document.createElement(
-            "div"
-          );
-
+          document.createElement("div");
 
         tile.className =
-          "cam-tile";
-
+          "cam-tile player-camera-tile";
 
         tile.id =
           `cam-player-${player.id}`;
 
 
         const wrap =
-          document.createElement(
-            "div"
-          );
-
+          document.createElement("div");
 
         wrap.className =
           "cam-video-wrap";
 
 
         const placeholder =
-          document.createElement(
-            "div"
-          );
-
+          document.createElement("div");
 
         placeholder.className =
           "cam-placeholder";
@@ -927,70 +739,49 @@
 
 
         const video =
-          document.createElement(
-            "video"
-          );
+          document.createElement("video");
+
+        video.autoplay = true;
+
+        video.playsInline = true;
+
+        video.muted = true;
+
+        video.style.display = "none";
+
+        video.style.width = "100%";
+
+        video.style.height = "100%";
+
+        video.style.objectFit = "cover";
 
 
-        video.autoplay =
-          true;
+        wrap.appendChild(placeholder);
 
-
-        video.playsInline =
-          true;
-
-
-        video.muted =
-          true;
-
-
-        video.style.display =
-          "none";
-
-
-        wrap.appendChild(
-          placeholder
-        );
-
-
-        wrap.appendChild(
-          video
-        );
+        wrap.appendChild(video);
 
 
         const name =
-          document.createElement(
-            "div"
-          );
-
+          document.createElement("div");
 
         name.className =
           "cam-name";
-
 
         name.textContent =
           player.name;
 
 
-        tile.appendChild(
-          wrap
-        );
+        tile.appendChild(wrap);
+
+        tile.appendChild(name);
 
 
-        tile.appendChild(
-          name
-        );
+        camRow.appendChild(tile);
 
 
-        camRow.appendChild(
-          tile
-        );
-
-
-        /*
-         * Falls sync.js bereits einen Remote-Stream
-         * bereitstellt.
-         */
+        // -------------------------------------------------
+        // Vorhandenen Remote-Stream verwenden
+        // -------------------------------------------------
 
         if (
           typeof getRemoteCameraStream ===
@@ -1008,21 +799,16 @@
             video.srcObject =
               stream;
 
-
             video.style.display =
               "block";
-
 
             placeholder.style.display =
               "none";
 
-
             video.play().catch(
               () => {}
             );
-
           }
-
         }
 
       });
@@ -1030,9 +816,9 @@
     }
 
 
-    // ======================================================
-    // SEITE INITIALISIEREN
-    // ======================================================
+    // =====================================================
+    // SEITE STARTEN
+    // =====================================================
 
     document.addEventListener(
       "DOMContentLoaded",
@@ -1051,39 +837,45 @@
         );
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // SPIELBRETT
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         if (
           typeof renderBoard ===
           "function"
         ) {
 
-          renderBoard(
-            true
-          );
-
+          renderBoard(true);
         }
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // SPIELER INITIALISIEREN
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         if (
           typeof seedPlayersIfEmpty ===
           "function"
         ) {
 
-          await seedPlayersIfEmpty();
+          try {
 
+            await seedPlayersIfEmpty();
+
+          } catch (error) {
+
+            console.error(
+              "Fehler beim Initialisieren der Spieler:",
+              error
+            );
+          }
         }
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // SPIELER ÜBERWACHEN
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         if (
           typeof watchPlayers ===
@@ -1104,12 +896,10 @@
               nextId =
                 Math.max(
                   0,
-
                   ...PLAYERS.map(
                     p =>
                       Number(p.id) || 0
                   )
-
                 ) + 1;
 
 
@@ -1123,9 +913,9 @@
         }
 
 
-        // --------------------------------------------------
+        // -------------------------------------------------
         // BENUTZTE FELDER
-        // --------------------------------------------------
+        // -------------------------------------------------
 
         if (
           typeof watchUsedCells ===
@@ -1135,18 +925,16 @@
           watchUsedCells(
             applyUsedCells
           );
-
         }
 
 
-        // --------------------------------------------------
-        // WEBRTC VORERST NICHT BENÖTIGT
-        // --------------------------------------------------
-
         console.log(
-          "Host-Kamera kann lokal gestartet werden."
+          "Host-Seite vollständig gestartet."
         );
 
+        console.log(
+          "Host-Kamera ist zunächst nur lokal aktiv."
+        );
 
         console.log(
           "================================="
