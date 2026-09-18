@@ -170,11 +170,17 @@
   seedPlayersIfEmpty();
 
   // Von Firebase kommende Änderungen (z. B. von dir selbst gespeichert) wieder anzeigen:
-  watchPlayers(players => {
-    PLAYERS = players;
-    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
-    renderCamRow();
-    renderHostRows();
+watchPlayers(players => {
+  PLAYERS = Array.isArray(players) ? players : Object.values(players);
+
+  nextId = Math.max(
+    0,
+    ...PLAYERS.map(p => Number(p.id) || 0)
+  ) + 1;
+
+  renderCamRow();
+  renderHostRows();
+});
   });
   watchUsedCells(applyUsedCells);
 </script>
