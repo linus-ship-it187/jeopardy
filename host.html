@@ -26,6 +26,10 @@
 
   <div class="camrow" id="camrow"></div>
 
+  <div class="video-call-wrap">
+    <div id="video-call"></div>
+  </div>
+
   <details class="host-panel" open>
     <summary>Host-Steuerung – nur für dich</summary>
     <div class="host-rows" id="host-rows"></div>
@@ -44,11 +48,13 @@
     </div>
   </div>
 
+<script src='https://meet.jit.si/external_api.js'></script>
 <script src="firebase-config.js"></script>
 <script src="game-data.js"></script>
 <script src="sync.js"></script>
 <script src="board.js"></script>
 <script src="camrow.js"></script>
+<script src="jitsi.js"></script>
 <script>
   let nextId = PLAYERS.length + 1;
   const hostRows = document.getElementById('host-rows');

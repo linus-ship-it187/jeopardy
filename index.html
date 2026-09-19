@@ -25,6 +25,10 @@
 
   <div class="camrow" id="camrow"></div>
 
+  <div class="video-call-wrap">
+    <div id="video-call"></div>
+  </div>
+
   <!-- Overlay/Modal existiert nur, damit board.js auf beiden Seiten funktioniert.
        Auf dieser Seite wird es nie geöffnet, da die Zellen nicht klickbar sind. -->
   <div class="overlay" id="overlay" hidden>
@@ -39,11 +43,13 @@
     </div>
   </div>
 
+<script src='https://meet.jit.si/external_api.js'></script>
 <script src="firebase-config.js"></script>
 <script src="game-data.js"></script>
 <script src="sync.js"></script>
 <script src="board.js"></script>
 <script src="camrow.js"></script>
+<script src="jitsi.js"></script>
 <script>
   // Board rein zur Anzeige (nicht klickbar) — nur der Host löst Fragen aus.
   renderBoard(false);
