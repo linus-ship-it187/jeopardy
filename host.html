@@ -32,6 +32,7 @@
     <div class="host-rows" id="host-rows"></div>
     <button class="add-team" id="add-team">+ Person hinzufügen</button>
     <br>
+    <button class="next-round-btn back-round-btn" id="back-round-btn">← Zurück</button>
     <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
   </details>
 
@@ -107,10 +108,16 @@
   });
 
   const nextRoundBtn = document.getElementById('next-round-btn');
+  const backRoundBtn = document.getElementById('back-round-btn');
   let boardIndex = 0;
   nextRoundBtn.addEventListener('click', () => {
     if (boardIndex < BOARDS.length - 1) {
       setCurrentBoard(boardIndex + 1);
+    }
+  });
+  backRoundBtn.addEventListener('click', () => {
+    if (boardIndex > 0) {
+      setCurrentBoard(boardIndex - 1);
     }
   });
 
@@ -139,6 +146,7 @@
     nextRoundBtn.textContent = idx >= BOARDS.length - 1
       ? 'Letzte Runde erreicht'
       : `x2 — ${BOARDS[idx + 1].name} starten`;
+    backRoundBtn.disabled = idx <= 0;
   });
 </script>
 </body>

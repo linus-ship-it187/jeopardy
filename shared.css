@@ -93,6 +93,11 @@ h1{
   filter:none;
 }
 
+.back-round-btn{
+  background: var(--pill);
+  margin-right:10px;
+}
+
 .board{
   width:100%;
   max-width:1080px;
