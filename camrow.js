@@ -1,8 +1,17 @@
-// ---- Facecam-Kacheln: werden EINMAL pro Spieler gebaut und danach nur noch aktualisiert,
-//      damit eine laufende Kamera-Übertragung nicht durch Punkte-Updates unterbrochen wird. ----
+// ---- Facecam-Kacheln über VDO.Ninja ----
+// Statt eigenem WebRTC-Signaling betten wir VDO.Ninja unsichtbar per iframe ein.
+// VDO.Ninja übernimmt die komplette Video-Übertragung (inkl. funktionierendem
+// STUN/TURN) — wir müssen uns um nichts davon mehr kümmern.
+//
+// Eindeutiger Raumname, damit wir nicht mit fremden VDO.Ninja-Nutzern kollidieren:
+const VDO_ROOM = 'jeopardyvonflixo2026';
 
 const camrow = document.getElementById('camrow');
-const camTiles = {}; // playerId -> { tile, nameEl, scoreEl, videoEl, placeholder, camBtn, broadcasting }
+const camTiles = {}; // playerId -> { tile, nameEl, scoreEl, viewFrame, pushFrame, camBtn, broadcasting }
+
+function streamIdFor(playerId){
+  return 'p' + playerId + '_' + VDO_ROOM;
+}
 
 function buildTile(p){
   const tile = document.createElement('div');
@@ -15,17 +24,21 @@ function buildTile(p){
   placeholder.className = 'cam-placeholder';
   placeholder.textContent = p.name.charAt(0).toUpperCase();
 
-  const video = document.createElement('video');
-  video.autoplay = true;
-  video.muted = true; // eigene Vorschau stumm; bei empfangenen Streams unten wieder aufgehoben
-  video.playsInline = true;
+  // Zeigt IMMER den Stream dieser Person an, sobald irgendjemand für sie sendet.
+  const viewFrame = document.createElement('iframe');
+  viewFrame.allow = 'camera; microphone; autoplay; fullscreen';
+  viewFrame.style.width = '100%';
+  viewFrame.style.height = '100%';
+  viewFrame.style.border = 'none';
+  viewFrame.style.display = 'none';
+  viewFrame.src = `https://vdo.ninja/?view=${streamIdFor(p.id)}&cleanoutput&transparent&bitrate=2500`;
 
   const camBtn = document.createElement('button');
   camBtn.className = 'cam-toggle';
   camBtn.textContent = 'Kamera an';
 
   videoWrap.appendChild(placeholder);
-  videoWrap.appendChild(video);
+  videoWrap.appendChild(viewFrame);
   videoWrap.appendChild(camBtn);
 
   const footer = document.createElement('div');
@@ -40,58 +53,44 @@ function buildTile(p){
   tile.appendChild(videoWrap);
   tile.appendChild(footer);
 
-  const ref = { tile, nameEl, scoreEl, videoEl: video, placeholder, camBtn, broadcasting: false };
+  const ref = { tile, nameEl, scoreEl, viewFrame, pushFrame: null, camBtn, broadcasting: false };
 
-  camBtn.addEventListener('click', async () => {
+  camBtn.addEventListener('click', () => {
     if (ref.broadcasting) {
-      stopBroadcast();
-      video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
-      video.srcObject = null;
-      video.style.display = 'none';
-      placeholder.style.display = 'flex';
+      if (ref.pushFrame) {
+        ref.pushFrame.remove();
+        ref.pushFrame = null;
+      }
       camBtn.textContent = 'Kamera an';
       ref.broadcasting = false;
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.muted = true;
-      video.srcObject = stream;
-      video.style.display = 'block';
-      placeholder.style.display = 'none';
-      camBtn.textContent = 'Kamera aus';
-      ref.broadcasting = true;
-      startBroadcast(p.id, stream);
-    } catch (err) {
-      alert('Kamera konnte nicht gestartet werden: ' + err.message);
-    }
+    // Unsichtbarer iframe, der NUR die eigene Kamera einfängt und sendet.
+    const pushFrame = document.createElement('iframe');
+    pushFrame.allow = 'camera; microphone; autoplay';
+    pushFrame.style.position = 'fixed';
+    pushFrame.style.width = '1px';
+    pushFrame.style.height = '1px';
+    pushFrame.style.opacity = '0';
+    pushFrame.style.pointerEvents = 'none';
+    pushFrame.src = `https://vdo.ninja/?push=${streamIdFor(p.id)}&webcam&cleanoutput`;
+    document.body.appendChild(pushFrame);
+    ref.pushFrame = pushFrame;
+    camBtn.textContent = 'Kamera aus';
+    ref.broadcasting = true;
   });
 
+  // Sobald der view-iframe irgendein Bild bekommt, Platzhalter ausblenden.
+  // (VDO.Ninja zeigt bei "cleanoutput" nichts an, solange niemand sendet —
+  //  wir blenden den iframe daher permanent sichtbar, sobald jemand auf
+  //  "Kamera an" klickt ODER sobald wir wissen, dass für diese Person
+  //  gerade gesendet wird; siehe unten.)
   return ref;
 }
-
-// Zeigt einen empfangenen Stream für playerId an (wird von webrtc.js aufgerufen).
-setRemoteVideoResolver(playerId => {
-  const ref = camTiles[playerId];
-  if (!ref || ref.broadcasting) return null; // eigene Kachel nicht mit Fremd-Stream überschreiben
-  ref.placeholder.style.display = 'none';
-  ref.videoEl.muted = false;
-  return ref.videoEl;
-});
-
-// Wenn ein anderer Browser die Übertragung für playerId beendet.
-setOnBroadcasterLeft(playerId => {
-  const ref = camTiles[playerId];
-  if (!ref || ref.broadcasting) return;
-  ref.videoEl.srcObject = null;
-  ref.videoEl.style.display = 'none';
-  ref.placeholder.style.display = 'flex';
-});
 
 function renderCamRow(players){
   const currentIds = new Set(players.map(p => String(p.id)));
 
-  // Entfernte Spieler aufräumen
   Object.keys(camTiles).forEach(id => {
     if (!currentIds.has(id)) {
       camTiles[id].tile.remove();
@@ -104,11 +103,12 @@ function renderCamRow(players){
     if (!camTiles[id]) {
       camTiles[id] = buildTile(p);
       camrow.appendChild(camTiles[id].tile);
+      // View-Frame von Anfang an sichtbar lassen — zeigt automatisch ein Bild,
+      // sobald jemand für diesen Platz sendet, sonst bleibt es einfach leer/schwarz
+      // und der Platzhalter (Buchstabe) liegt sichtbar darunter.
+      camTiles[id].viewFrame.style.display = 'block';
     }
     camTiles[id].nameEl.textContent = p.name;
     camTiles[id].scoreEl.textContent = p.score;
-    camTiles[id].placeholder.textContent = p.name.charAt(0).toUpperCase();
   });
 }
-
-watchBroadcasters();
