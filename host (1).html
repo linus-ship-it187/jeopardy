@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeopardy — Host</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
+    <h1>Jeopardy</h1>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
+  </div>
+  <p class="mode-tag">HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben</p>
+
+  <div class="board">
+    <div class="grid" id="board-grid"></div>
+  </div>
+
+  <div class="camrow" id="camrow"></div>
+
+  <details class="host-panel" open>
+    <summary>Host-Steuerung – nur für dich</summary>
+    <div class="host-rows" id="host-rows"></div>
+    <button class="add-team" id="add-team">+ Person hinzufügen</button>
+  </details>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="modal">
+      <div class="eyebrow" id="modal-meta"></div>
+      <p class="prompt" id="modal-question"></p>
+      <p class="answer" id="modal-answer" hidden></p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="reveal-btn">Antwort zeigen</button>
+        <button class="btn-ghost" id="close-btn">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+<script src="firebase-config.js"></script>
+<script src="game-data.js"></script>
+<script src="sync.js"></script>
+<script src="webrtc.js"></script>
+<script src="board.js"></script>
+<script src="camrow.js"></script>
+<script>
+  let nextId = PLAYERS.length + 1;
+  const hostRows = document.getElementById('host-rows');
+
+  function renderHostRows(){
+    hostRows.innerHTML = '';
+    PLAYERS.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'host-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = p.name;
+      nameInput.addEventListener('change', e => {
+        p.name = e.target.value;
+        savePlayers(PLAYERS);
+      });
+
+      const minus = document.createElement('button');
+      minus.className = 'score-btn';
+      minus.textContent = '−';
+      minus.addEventListener('click', () => { p.score -= 100; savePlayers(PLAYERS); });
+
+      const scoreVal = document.createElement('span');
+      scoreVal.className = 'host-score-value';
+      scoreVal.textContent = p.score;
+
+      const plus = document.createElement('button');
+      plus.className = 'score-btn';
+      plus.textContent = '+';
+      plus.addEventListener('click', () => { p.score += 100; savePlayers(PLAYERS); });
+
+      const remove = document.createElement('button');
+      remove.className = 'remove-btn';
+      remove.textContent = 'Entfernen';
+      remove.addEventListener('click', () => {
+        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
+        savePlayers(PLAYERS);
+      });
+
+      row.appendChild(nameInput);
+      row.appendChild(minus);
+      row.appendChild(scoreVal);
+      row.appendChild(plus);
+      row.appendChild(remove);
+      hostRows.appendChild(row);
+    });
+  }
+
+  document.getElementById('add-team').addEventListener('click', () => {
+    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0 });
+    savePlayers(PLAYERS);
+  });
+
+  // Board ist hier klickbar — der Host löst Fragen aus.
+  renderBoard(true);
+  renderCamRow(PLAYERS);
+  renderHostRows();
+  seedPlayersIfEmpty();
+
+  watchPlayers(players => {
+    PLAYERS = players;
+    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
+    renderCamRow(PLAYERS);
+    renderHostRows();
+  });
+  watchUsedCells(applyUsedCells);
+</script>
+</body>
+</html>
