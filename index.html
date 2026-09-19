@@ -19,6 +19,7 @@
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.2 7.2L21 9.4l-6 4.4 2.2 7.2L12 17l-5.2 4-2.2-7.2L-1.4 9.4l6.8-2.2z" transform="translate(1.4)"/></svg>
   </div>
 
+  <div class="board-title" id="board-title"></div>
   <div class="board">
     <div class="grid" id="board-grid"></div>
   </div>
@@ -43,79 +44,25 @@
 <script src="game-data.js"></script>
 <script src="sync.js"></script>
 <script src="board.js"></script>
+<script src="camrow.js"></script>
 <script>
-  const camrow = document.getElementById('camrow');
-
-  function renderCamRow(){
-    camrow.innerHTML = '';
-    PLAYERS.forEach(p => {
-      const tile = document.createElement('div');
-      tile.className = 'cam-tile';
-
-      const videoWrap = document.createElement('div');
-      videoWrap.className = 'cam-video-wrap';
-
-      const placeholder = document.createElement('div');
-      placeholder.className = 'cam-placeholder';
-      placeholder.textContent = p.name.charAt(0).toUpperCase();
-
-      const video = document.createElement('video');
-      video.autoplay = true;
-      video.muted = true;
-      video.playsInline = true;
-
-      const camBtn = document.createElement('button');
-      camBtn.className = 'cam-toggle';
-      camBtn.textContent = 'Kamera an';
-      camBtn.addEventListener('click', async () => {
-        if (video.style.display === 'block') {
-          video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
-          video.style.display = 'none';
-          placeholder.style.display = 'flex';
-          camBtn.textContent = 'Kamera an';
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          video.srcObject = stream;
-          video.style.display = 'block';
-          placeholder.style.display = 'none';
-          camBtn.textContent = 'Kamera aus';
-        } catch (err) {
-          alert('Kamera konnte nicht gestartet werden: ' + err.message);
-        }
-      });
-
-      videoWrap.appendChild(placeholder);
-      videoWrap.appendChild(video);
-      videoWrap.appendChild(camBtn);
-
-      const footer = document.createElement('div');
-      footer.className = 'cam-footer';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'cam-name';
-      nameEl.textContent = p.name;
-      const scoreEl = document.createElement('span');
-      scoreEl.className = 'cam-score';
-      scoreEl.textContent = p.score;
-      footer.appendChild(nameEl);
-      footer.appendChild(scoreEl);
-
-      tile.appendChild(videoWrap);
-      tile.appendChild(footer);
-      camrow.appendChild(tile);
-    });
-  }
-
   // Board rein zur Anzeige (nicht klickbar) — nur der Host löst Fragen aus.
   renderBoard(false);
-  renderCamRow();
+  renderCamRow(PLAYERS);
 
   // Live-Updates aus Firebase übernehmen:
-  watchUsedCells(applyUsedCells);
+  let lastUsedCells = {};
+  watchUsedCells(cells => {
+    lastUsedCells = cells;
+    applyUsedCells(cells);
+  });
+  watchCurrentBoard(idx => {
+    setBoardIndex(idx);
+    applyUsedCells(lastUsedCells); // aktuellen Stand direkt auf die neue Runde anwenden
+  });
   watchPlayers(players => {
     PLAYERS = players;
-    renderCamRow();
+    renderCamRow(PLAYERS);
   });
 </script>
 </body>

@@ -1,7 +1,7 @@
 // ---- Sync-Helfer: verbindet Board & Punktestand mit der Firebase Realtime Database ----
 
-function cellKey(catIndex, value){
-  return catIndex + '_' + value;
+function cellKey(boardIndex, catIndex, value){
+  return boardIndex + '_' + catIndex + '_' + value;
 }
 
 // Schreibt die Ausgangs-Spielerliste einmalig in die Datenbank, falls dort noch nichts steht.
@@ -34,6 +34,18 @@ function savePlayers(players){
 }
 
 // Markiert eine einzelne Zelle als beantwortet.
-function markCellUsed(catIndex, value){
-  db.ref('usedCells/' + cellKey(catIndex, value)).set(true);
+function markCellUsed(boardIndex, catIndex, value){
+  db.ref('usedCells/' + cellKey(boardIndex, catIndex, value)).set(true);
+}
+
+// Ruft callback(boardIndex) jedes Mal auf, wenn sich die aktuelle Runde ändert.
+function watchCurrentBoard(callback){
+  db.ref('currentBoardIndex').on('value', snap => {
+    callback(snap.val() || 0);
+  });
+}
+
+// Schaltet für ALLE (Host + Zuschauer) auf eine andere Runde um.
+function setCurrentBoard(index){
+  db.ref('currentBoardIndex').set(index);
 }

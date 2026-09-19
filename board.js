@@ -1,30 +1,47 @@
-// cellRefs merkt sich jede Zellen-Schaltfläche unter ihrem Schlüssel ("<kategorieIndex>_<wert>"),
+// cellRefs merkt sich jede Zellen-Schaltfläche der AKTUELLEN Runde unter ihrem Schlüssel,
 // damit wir sie später (bei einem Firebase-Update) gezielt ausgrauen können.
 let cellRefs = {};
+let currentInteractive = false;
+let currentBoardIndex = 0;
 
 // interactive = true  -> Board ist klickbar (host.html), Fragen öffnen sich
 // interactive = false -> Board ist reine Anzeige (index.html), kein Klick möglich
 function renderBoard(interactive){
+  currentInteractive = interactive;
+  renderCurrentBoard();
+}
+
+// Wird aufgerufen, wenn sich die Runde ändert (z. B. durch den "x2"-Button des Hosts).
+function setBoardIndex(idx){
+  currentBoardIndex = idx;
+  renderCurrentBoard();
+}
+
+function renderCurrentBoard(){
+  const board = BOARDS[currentBoardIndex];
   const grid = document.getElementById('board-grid');
-  grid.style.setProperty('--cols', DATA.length);
+  grid.style.setProperty('--cols', board.categories.length);
   grid.innerHTML = '';
   cellRefs = {};
 
-  DATA.forEach(cat => {
+  const titleEl = document.getElementById('board-title');
+  if (titleEl) titleEl.textContent = board.name;
+
+  board.categories.forEach(cat => {
     const label = document.createElement('div');
     label.className = 'category';
     label.textContent = cat.category;
     grid.appendChild(label);
   });
 
-  VALUES.forEach(value => {
-    DATA.forEach((cat, catIndex) => {
+  board.values.forEach(value => {
+    board.categories.forEach((cat, catIndex) => {
       const btn = document.createElement('button');
       btn.className = 'cell';
       btn.textContent = value;
-      cellRefs[cellKey(catIndex, value)] = btn;
+      cellRefs[cellKey(currentBoardIndex, catIndex, value)] = btn;
 
-      if (interactive) {
+      if (currentInteractive) {
         btn.addEventListener('click', () => openQuestion(cat, catIndex, value, btn));
       } else {
         btn.style.cursor = 'default';
@@ -65,7 +82,7 @@ function openQuestion(cat, catIndex, value, btn){
   closeBtn.onclick = () => {
     overlay.hidden = true;
     btn.disabled = true;
-    markCellUsed(catIndex, value);
+    markCellUsed(currentBoardIndex, catIndex, value);
   };
 }
 

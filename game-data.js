@@ -1,5 +1,7 @@
 // ---- Hier die eigenen Kategorien & Fragen eintragen ----
-const DATA = [
+
+// Runde 1 (normale Punkte)
+const ROUND1_CATEGORIES = [
   {
     category: "Zurück in die Schule",
     questions: {
@@ -52,7 +54,64 @@ const DATA = [
   }
 ];
 
-const VALUES = [100, 200, 300, 400, 500];
+// Runde 2 (x2 — doppelte Punkte). Kategorien/Fragen hier eigene eintragen.
+const ROUND2_CATEGORIES = [
+  {
+    category: "Kategorie 1",
+    questions: {
+      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
+      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
+      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
+      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
+      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+    }
+  },
+  {
+    category: "Kategorie 2",
+    questions: {
+      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
+      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
+      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
+      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
+      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+    }
+  },
+  {
+    category: "Kategorie 3",
+    questions: {
+      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
+      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
+      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
+      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
+      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+    }
+  },
+  {
+    category: "Kategorie 4",
+    questions: {
+      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
+      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
+      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
+      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
+      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+    }
+  },
+  {
+    category: "Kategorie 5",
+    questions: {
+      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
+      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
+      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
+      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
+      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+    }
+  }
+];
+
+const BOARDS = [
+  { name: 'Runde 1', values: [100, 200, 300, 400, 500], categories: ROUND1_CATEGORIES },
+  { name: 'Runde 2 (x2)', values: [200, 400, 600, 800, 1000], categories: ROUND2_CATEGORIES }
+];
 
 // Ausgangs-Spielerliste. Wird nur EINMALIG in die Datenbank geschrieben,
 // falls dort noch keine Spieler existieren (siehe sync.js: seedPlayersIfEmpty).

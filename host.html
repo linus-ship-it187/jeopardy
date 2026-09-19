@@ -20,6 +20,7 @@
   </div>
   <p class="mode-tag">HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben</p>
 
+  <div class="board-title" id="board-title"></div>
   <div class="board">
     <div class="grid" id="board-grid"></div>
   </div>
@@ -30,6 +31,8 @@
     <summary>Host-Steuerung – nur für dich</summary>
     <div class="host-rows" id="host-rows"></div>
     <button class="add-team" id="add-team">+ Person hinzufügen</button>
+    <br>
+    <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
   </details>
 
   <div class="overlay" id="overlay" hidden>
@@ -48,72 +51,10 @@
 <script src="game-data.js"></script>
 <script src="sync.js"></script>
 <script src="board.js"></script>
+<script src="camrow.js"></script>
 <script>
   let nextId = PLAYERS.length + 1;
-
-  const camrow = document.getElementById('camrow');
   const hostRows = document.getElementById('host-rows');
-
-  function renderCamRow(){
-    camrow.innerHTML = '';
-    PLAYERS.forEach(p => {
-      const tile = document.createElement('div');
-      tile.className = 'cam-tile';
-
-      const videoWrap = document.createElement('div');
-      videoWrap.className = 'cam-video-wrap';
-
-      const placeholder = document.createElement('div');
-      placeholder.className = 'cam-placeholder';
-      placeholder.textContent = p.name.charAt(0).toUpperCase();
-
-      const video = document.createElement('video');
-      video.autoplay = true;
-      video.muted = true;
-      video.playsInline = true;
-
-      const camBtn = document.createElement('button');
-      camBtn.className = 'cam-toggle';
-      camBtn.textContent = 'Kamera an';
-      camBtn.addEventListener('click', async () => {
-        if (video.style.display === 'block') {
-          video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
-          video.style.display = 'none';
-          placeholder.style.display = 'flex';
-          camBtn.textContent = 'Kamera an';
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          video.srcObject = stream;
-          video.style.display = 'block';
-          placeholder.style.display = 'none';
-          camBtn.textContent = 'Kamera aus';
-        } catch (err) {
-          alert('Kamera konnte nicht gestartet werden: ' + err.message);
-        }
-      });
-
-      videoWrap.appendChild(placeholder);
-      videoWrap.appendChild(video);
-      videoWrap.appendChild(camBtn);
-
-      const footer = document.createElement('div');
-      footer.className = 'cam-footer';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'cam-name';
-      nameEl.textContent = p.name;
-      const scoreEl = document.createElement('span');
-      scoreEl.className = 'cam-score';
-      scoreEl.textContent = p.score;
-      footer.appendChild(nameEl);
-      footer.appendChild(scoreEl);
-
-      tile.appendChild(videoWrap);
-      tile.appendChild(footer);
-      camrow.appendChild(tile);
-    });
-  }
 
   function renderHostRows(){
     hostRows.innerHTML = '';
@@ -165,18 +106,40 @@
     savePlayers(PLAYERS);
   });
 
+  const nextRoundBtn = document.getElementById('next-round-btn');
+  let boardIndex = 0;
+  nextRoundBtn.addEventListener('click', () => {
+    if (boardIndex < BOARDS.length - 1) {
+      setCurrentBoard(boardIndex + 1);
+    }
+  });
+
   // Board ist hier klickbar — der Host löst Fragen aus.
   renderBoard(true);
+  renderCamRow(PLAYERS);
+  renderHostRows();
   seedPlayersIfEmpty();
 
-  // Von Firebase kommende Änderungen (z. B. von dir selbst gespeichert) wieder anzeigen:
+  let lastUsedCells = {};
   watchPlayers(players => {
     PLAYERS = players;
     nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
-    renderCamRow();
+    renderCamRow(PLAYERS);
     renderHostRows();
   });
-  watchUsedCells(applyUsedCells);
+  watchUsedCells(cells => {
+    lastUsedCells = cells;
+    applyUsedCells(cells);
+  });
+  watchCurrentBoard(idx => {
+    boardIndex = idx;
+    setBoardIndex(idx);
+    applyUsedCells(lastUsedCells);
+    nextRoundBtn.disabled = idx >= BOARDS.length - 1;
+    nextRoundBtn.textContent = idx >= BOARDS.length - 1
+      ? 'Letzte Runde erreicht'
+      : `x2 — ${BOARDS[idx + 1].name} starten`;
+  });
 </script>
 </body>
 </html>
