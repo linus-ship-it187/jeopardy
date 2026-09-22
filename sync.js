@@ -49,3 +49,25 @@ function watchCurrentBoard(callback){
 function setCurrentBoard(index){
   db.ref('currentBoardIndex').set(index);
 }
+
+// Die gerade vom Host geöffnete Frage — für ALLE sichtbar, nicht nur den Host.
+function watchOpenQuestion(callback){
+  db.ref('currentQuestion').on('value', snap => callback(snap.val()));
+}
+
+function setOpenQuestion(data){
+  db.ref('currentQuestion').set(data);
+}
+
+function clearOpenQuestion(){
+  db.ref('currentQuestion').remove();
+}
+
+// Team-Modus: wenn aktiv, wirkt +/- auf alle Spieler mit demselben "team"-Namen gleichzeitig.
+function watchTeamMode(callback){
+  db.ref('teamMode').on('value', snap => callback(!!snap.val()));
+}
+
+function setTeamMode(enabled){
+  db.ref('teamMode').set(enabled);
+}

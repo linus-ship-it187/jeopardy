@@ -60,6 +60,13 @@
     setBoardIndex(idx);
     applyUsedCells(lastUsedCells); // aktuellen Stand direkt auf die neue Runde anwenden
   });
+  watchOpenQuestion(data => {
+    if (data) {
+      displayQuestion(data);
+    } else {
+      hideQuestionModal();
+    }
+  });
   watchPlayers(players => {
     PLAYERS = players;
     renderCamRow(PLAYERS);

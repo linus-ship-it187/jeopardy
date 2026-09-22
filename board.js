@@ -68,26 +68,44 @@ const modalAnswer = document.getElementById('modal-answer');
 const revealBtn = document.getElementById('reveal-btn');
 const closeBtn = document.getElementById('close-btn');
 
+let openBtn = null; // Board-Zelle, die gerade offen ist (nur beim Host relevant, zum Ausgrauen beim Schließen)
+
+// Host: Klick auf eine Zelle öffnet die Frage — für ALLE sichtbar, über Firebase.
 function openQuestion(cat, catIndex, value, btn){
-  const item = cat.questions[value];
-  modalMeta.textContent = `${cat.category} — ${value}`;
-  modalQuestion.textContent = item.q;
-  modalAnswer.textContent = item.a;
-  modalAnswer.hidden = true;
-  revealBtn.textContent = 'Antwort zeigen';
-  overlay.hidden = false;
-  revealBtn.onclick = () => {
-    modalAnswer.hidden = false;
-  };
-  closeBtn.onclick = () => {
-    overlay.hidden = true;
-    btn.disabled = true;
-    markCellUsed(currentBoardIndex, catIndex, value);
-  };
+  openBtn = btn;
+  setOpenQuestion({ boardIndex: currentBoardIndex, catIndex, value, revealed: false });
 }
 
-overlay.addEventListener('click', (e) => {
-  if (e.target === overlay) {
-    overlay.hidden = true;
+// Zeigt die aktuell offene Frage an (wird von watchOpenQuestion sowohl beim Host
+// als auch bei allen Zuschauern aufgerufen — so sehen alle dieselbe Frage).
+function displayQuestion(data){
+  const board = BOARDS[data.boardIndex];
+  const cat = board.categories[data.catIndex];
+  const item = cat.questions[data.value];
+
+  modalMeta.textContent = `${cat.category} — ${data.value}`;
+  modalQuestion.textContent = item.q;
+  modalAnswer.textContent = item.a;
+  modalAnswer.hidden = !data.revealed;
+  overlay.hidden = false;
+
+  // Nur der Host bekommt die Bedienknöpfe — Zuschauer sehen nur die Frage/Antwort.
+  revealBtn.style.display = currentInteractive ? 'inline-block' : 'none';
+  closeBtn.style.display = currentInteractive ? 'inline-block' : 'none';
+
+  if (currentInteractive) {
+    revealBtn.textContent = 'Antwort zeigen';
+    revealBtn.onclick = () => {
+      setOpenQuestion({ boardIndex: data.boardIndex, catIndex: data.catIndex, value: data.value, revealed: true });
+    };
+    closeBtn.onclick = () => {
+      clearOpenQuestion();
+      if (openBtn) openBtn.disabled = true;
+      markCellUsed(data.boardIndex, data.catIndex, data.value);
+    };
   }
-});
+}
+
+function hideQuestionModal(){
+  overlay.hidden = true;
+}

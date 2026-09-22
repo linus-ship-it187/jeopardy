@@ -98,6 +98,16 @@ h1{
   margin-right:10px;
 }
 
+.team-mode-btn{
+  background: var(--host-bg);
+  border:2px solid var(--host-border);
+  color: var(--host-border);
+}
+.team-mode-btn.active{
+  background: var(--host-border);
+  color: var(--host-bg);
+}
+
 .board{
   width:100%;
   max-width:1080px;

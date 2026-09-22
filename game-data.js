@@ -117,7 +117,7 @@ const BOARDS = [
 // falls dort noch keine Spieler existieren (siehe sync.js: seedPlayersIfEmpty).
 // Danach ist die Datenbank die "Wahrheit" — Namen/Punkte änderst du auf host.html.
 let PLAYERS = [
-  { id: 1, name: 'Niek', score: 0 },
-  { id: 2, name: 'Basti', score: 0 },
-  { id: 3, name: 'Kevin', score: 0 }
+  { id: 1, name: 'Niek', score: 0, team: '' },
+  { id: 2, name: 'Basti', score: 0, team: '' },
+  { id: 3, name: 'Kevin', score: 0, team: '' }
 ];

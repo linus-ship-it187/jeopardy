@@ -32,6 +32,8 @@
     <div class="host-rows" id="host-rows"></div>
     <button class="add-team" id="add-team">+ Person hinzufügen</button>
     <br>
+    <button class="next-round-btn team-mode-btn" id="team-mode-btn">Team-Modus aktivieren</button>
+    <br>
     <button class="next-round-btn back-round-btn" id="back-round-btn">← Zurück</button>
     <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
   </details>
@@ -71,10 +73,20 @@
         savePlayers(PLAYERS);
       });
 
+      const teamInput = document.createElement('input');
+      teamInput.type = 'text';
+      teamInput.placeholder = 'Team (optional)';
+      teamInput.value = p.team || '';
+      teamInput.style.width = '120px';
+      teamInput.addEventListener('change', e => {
+        p.team = e.target.value.trim();
+        savePlayers(PLAYERS);
+      });
+
       const minus = document.createElement('button');
       minus.className = 'score-btn';
       minus.textContent = '−';
-      minus.addEventListener('click', () => { p.score -= 100; savePlayers(PLAYERS); });
+      minus.addEventListener('click', () => { adjustScore(p, -100); });
 
       const scoreVal = document.createElement('span');
       scoreVal.className = 'host-score-value';
@@ -83,7 +95,7 @@
       const plus = document.createElement('button');
       plus.className = 'score-btn';
       plus.textContent = '+';
-      plus.addEventListener('click', () => { p.score += 100; savePlayers(PLAYERS); });
+      plus.addEventListener('click', () => { adjustScore(p, 100); });
 
       const remove = document.createElement('button');
       remove.className = 'remove-btn';
@@ -94,6 +106,7 @@
       });
 
       row.appendChild(nameInput);
+      row.appendChild(teamInput);
       row.appendChild(minus);
       row.appendChild(scoreVal);
       row.appendChild(plus);
@@ -102,9 +115,28 @@
     });
   }
 
-  document.getElementById('add-team').addEventListener('click', () => {
-    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0 });
+  // Ändert die Punktzahl eines Spielers um delta. Im Team-Modus wirkt das auf
+  // ALLE Spieler mit demselben (nicht-leeren) Team-Namen gleichzeitig.
+  function adjustScore(player, delta){
+    if (teamModeOn && player.team) {
+      PLAYERS.forEach(p => {
+        if (p.team === player.team) p.score += delta;
+      });
+    } else {
+      player.score += delta;
+    }
     savePlayers(PLAYERS);
+  }
+
+  document.getElementById('add-team').addEventListener('click', () => {
+    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0, team: '' });
+    savePlayers(PLAYERS);
+  });
+
+  let teamModeOn = false;
+  const teamModeBtn = document.getElementById('team-mode-btn');
+  teamModeBtn.addEventListener('click', () => {
+    setTeamMode(!teamModeOn);
   });
 
   const nextRoundBtn = document.getElementById('next-round-btn');
@@ -147,6 +179,18 @@
       ? 'Letzte Runde erreicht'
       : `x2 — ${BOARDS[idx + 1].name} starten`;
     backRoundBtn.disabled = idx <= 0;
+  });
+  watchOpenQuestion(data => {
+    if (data) {
+      displayQuestion(data);
+    } else {
+      hideQuestionModal();
+    }
+  });
+  watchTeamMode(enabled => {
+    teamModeOn = enabled;
+    teamModeBtn.textContent = enabled ? 'Team-Modus deaktivieren' : 'Team-Modus aktivieren';
+    teamModeBtn.classList.toggle('active', enabled);
   });
 </script>
 </body>
