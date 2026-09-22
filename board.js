@@ -53,11 +53,11 @@ function renderCurrentBoard(){
 }
 
 // Wird von watchUsedCells() aufgerufen, sobald sich der Board-Status in der DB ändert.
+// Setzt disabled sowohl auf true als auch zurück auf false, damit ein Reset
+// (leeres usedCells-Objekt) die Zellen auch wieder freigibt.
 function applyUsedCells(usedCells){
   Object.keys(cellRefs).forEach(key => {
-    if (usedCells[key]) {
-      cellRefs[key].disabled = true;
-    }
+    cellRefs[key].disabled = !!usedCells[key];
   });
 }
 

@@ -36,6 +36,8 @@
     <br>
     <button class="next-round-btn back-round-btn" id="back-round-btn">← Zurück</button>
     <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
+    <br>
+    <button class="next-round-btn reset-btn" id="reset-btn">↺ Spiel zurücksetzen</button>
   </details>
 
   <div class="overlay" id="overlay" hidden>
@@ -137,6 +139,12 @@
   const teamModeBtn = document.getElementById('team-mode-btn');
   teamModeBtn.addEventListener('click', () => {
     setTeamMode(!teamModeOn);
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (confirm('Spiel wirklich zurücksetzen? Alle Punkte werden auf 0 gesetzt und das Board wird wieder leer.')) {
+      resetGame(PLAYERS);
+    }
   });
 
   const nextRoundBtn = document.getElementById('next-round-btn');

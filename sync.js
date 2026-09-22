@@ -71,3 +71,12 @@ function watchTeamMode(callback){
 function setTeamMode(enabled){
   db.ref('teamMode').set(enabled);
 }
+
+// Setzt das komplette Spiel zurück: alle Punkte auf 0, Board leer, zurück auf Runde 1.
+function resetGame(currentPlayers){
+  const resetPlayers = currentPlayers.map(p => ({ ...p, score: 0 }));
+  db.ref('players').set(resetPlayers);
+  db.ref('usedCells').remove();
+  db.ref('currentQuestion').remove();
+  db.ref('currentBoardIndex').set(0);
+}

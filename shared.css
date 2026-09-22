@@ -108,6 +108,16 @@ h1{
   color: var(--host-bg);
 }
 
+.reset-btn{
+  background: transparent;
+  border:1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.75);
+}
+.reset-btn:hover{
+  border-color:#ff8a8a;
+  color:#ff8a8a;
+}
+
 .board{
   width:100%;
   max-width:1080px;
