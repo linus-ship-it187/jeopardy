@@ -87,6 +87,60 @@ setOnBroadcasterLeft(playerId => {
   ref.placeholder.style.display = 'flex';
 });
 
+// Merkt sich pro Team einen umrandeten Container, in den die Kacheln der
+// Team-Mitglieder gemeinsam einsortiert werden.
+const groupWrappers = {};
+let camTeamModeOn = false;
+let lastPlayers = [];
+
+function setCamTeamMode(enabled){
+  camTeamModeOn = enabled;
+  arrangeCamTiles(lastPlayers);
+}
+
+// Ordnet die (bereits existierenden) Kachel-Elemente neu an — Teamkollegen
+// landen nebeneinander in einem gemeinsamen, farbig umrandeten Container.
+// Wichtig: appendChild verschiebt nur das existierende Element, das Video/
+// die laufende Kamera-Übertragung wird dadurch NICHT unterbrochen.
+function arrangeCamTiles(players){
+  lastPlayers = players;
+
+  if (!camTeamModeOn) {
+    players.forEach(p => {
+      const ref = camTiles[String(p.id)];
+      if (ref) camrow.appendChild(ref.tile);
+    });
+    Object.values(groupWrappers).forEach(w => w.remove());
+    return;
+  }
+
+  TEAM_DEFS.forEach(teamDef => {
+    const members = players.filter(p => p.team === teamDef.name);
+    if (members.length === 0) {
+      if (groupWrappers[teamDef.name]) groupWrappers[teamDef.name].remove();
+      return;
+    }
+    if (!groupWrappers[teamDef.name]) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'team-group';
+      groupWrappers[teamDef.name] = wrapper;
+    }
+    const wrapper = groupWrappers[teamDef.name];
+    wrapper.style.borderColor = teamDef.color;
+    camrow.appendChild(wrapper);
+    members.forEach(p => {
+      const ref = camTiles[String(p.id)];
+      if (ref) wrapper.appendChild(ref.tile);
+    });
+  });
+
+  // Spieler ohne Team bleiben einzeln, außerhalb der farbigen Rahmen.
+  players.filter(p => !p.team).forEach(p => {
+    const ref = camTiles[String(p.id)];
+    if (ref) camrow.appendChild(ref.tile);
+  });
+}
+
 function renderCamRow(players){
   const currentIds = new Set(players.map(p => String(p.id)));
 
@@ -107,6 +161,8 @@ function renderCamRow(players){
     camTiles[id].scoreEl.textContent = p.score;
     camTiles[id].placeholder.textContent = p.name.charAt(0).toUpperCase();
   });
+
+  arrangeCamTiles(players);
 }
 
 watchBroadcasters();

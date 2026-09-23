@@ -27,8 +27,6 @@
 
   <div class="camrow" id="camrow"></div>
 
-  <div class="team-bubbles" id="team-bubbles"></div>
-
   <details class="host-panel" open>
     <summary>Host-Steuerung – nur für dich</summary>
     <div class="host-rows" id="host-rows"></div>
@@ -60,7 +58,6 @@
 <script src="webrtc.js"></script>
 <script src="board.js"></script>
 <script src="camrow.js"></script>
-<script src="team-bubbles.js"></script>
 <script>
   let nextId = PLAYERS.length + 1;
   const hostRows = document.getElementById('host-rows');
@@ -177,7 +174,6 @@
   renderBoard(true);
   renderCamRow(PLAYERS);
   renderHostRows();
-  renderTeamBubbles(PLAYERS);
   seedPlayersIfEmpty();
 
   let lastUsedCells = {};
@@ -186,7 +182,6 @@
     nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
     renderCamRow(PLAYERS);
     renderHostRows();
-    renderTeamBubbles(PLAYERS);
   });
   watchUsedCells(cells => {
     lastUsedCells = cells;
@@ -213,7 +208,7 @@
     teamModeOn = enabled;
     teamModeBtn.textContent = enabled ? 'Team-Modus deaktivieren' : 'Team-Modus aktivieren';
     teamModeBtn.classList.toggle('active', enabled);
-    showTeamBubbles(enabled);
+    setCamTeamMode(enabled);
   });
 </script>
 </body>
