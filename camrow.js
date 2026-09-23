@@ -1,9 +1,7 @@
-// ---- Facecam-Kacheln: nur lokale Kamera-Vorschau, keine Übertragung zwischen Geräten. ----
-// Jeder Streamer nutzt die Seite bei sich selbst (z. B. als OBS-Browserquelle) und
-// schaltet nur seine EIGENE Kamera in seiner eigenen Kachel ein.
+// ---- Facecam-Kacheln mit geteilten Kameras über unser eigenes WebRTC ----
 
 const camrow = document.getElementById('camrow');
-const camTiles = {}; // playerId -> { tile, nameEl, scoreEl, videoEl, placeholder, camBtn, on }
+const camTiles = {}; // playerId -> { tile, nameEl, scoreEl, videoEl, placeholder, camBtn, broadcasting }
 
 function buildTile(p){
   const tile = document.createElement('div');
@@ -18,7 +16,7 @@ function buildTile(p){
 
   const video = document.createElement('video');
   video.autoplay = true;
-  video.muted = true;
+  video.muted = true; // eigene Vorschau stumm; bei empfangenen Streams unten wieder aufgehoben
   video.playsInline = true;
 
   const camBtn = document.createElement('button');
@@ -41,25 +39,28 @@ function buildTile(p){
   tile.appendChild(videoWrap);
   tile.appendChild(footer);
 
-  const ref = { tile, nameEl, scoreEl, videoEl: video, placeholder, camBtn, on: false };
+  const ref = { tile, nameEl, scoreEl, videoEl: video, placeholder, camBtn, broadcasting: false };
 
   camBtn.addEventListener('click', async () => {
-    if (ref.on) {
+    if (ref.broadcasting) {
+      stopBroadcast();
       video.srcObject && video.srcObject.getTracks().forEach(t => t.stop());
       video.srcObject = null;
       video.style.display = 'none';
       placeholder.style.display = 'flex';
       camBtn.textContent = 'Kamera an';
-      ref.on = false;
+      ref.broadcasting = false;
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.muted = true;
       video.srcObject = stream;
       video.style.display = 'block';
       placeholder.style.display = 'none';
       camBtn.textContent = 'Kamera aus';
-      ref.on = true;
+      ref.broadcasting = true;
+      startBroadcast(p.id, stream);
     } catch (err) {
       alert('Kamera konnte nicht gestartet werden: ' + err.message);
     }
@@ -67,6 +68,24 @@ function buildTile(p){
 
   return ref;
 }
+
+// Zeigt einen empfangenen Stream für playerId an (wird von webrtc.js aufgerufen).
+setRemoteVideoResolver(playerId => {
+  const ref = camTiles[playerId];
+  if (!ref || ref.broadcasting) return null; // eigene Kachel nicht mit Fremd-Stream überschreiben
+  ref.placeholder.style.display = 'none';
+  ref.videoEl.muted = false;
+  return ref.videoEl;
+});
+
+// Wenn ein anderer Browser die Übertragung für playerId beendet.
+setOnBroadcasterLeft(playerId => {
+  const ref = camTiles[playerId];
+  if (!ref || ref.broadcasting) return;
+  ref.videoEl.srcObject = null;
+  ref.videoEl.style.display = 'none';
+  ref.placeholder.style.display = 'flex';
+});
 
 function renderCamRow(players){
   const currentIds = new Set(players.map(p => String(p.id)));
@@ -84,8 +103,10 @@ function renderCamRow(players){
       camTiles[id] = buildTile(p);
       camrow.appendChild(camTiles[id].tile);
     }
-    camTiles[id].nameEl.textContent = p.name;
+    camTiles[id].nameEl.textContent = p.team ? `${p.name} (${p.team})` : p.name;
     camTiles[id].scoreEl.textContent = p.score;
     camTiles[id].placeholder.textContent = p.name.charAt(0).toUpperCase();
   });
 }
+
+watchBroadcasters();
