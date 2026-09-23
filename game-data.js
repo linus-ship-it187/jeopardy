@@ -116,6 +116,13 @@ const BOARDS = [
 // Ausgangs-Spielerliste. Wird nur EINMALIG in die Datenbank geschrieben,
 // falls dort noch keine Spieler existieren (siehe sync.js: seedPlayersIfEmpty).
 // Danach ist die Datenbank die "Wahrheit" — Namen/Punkte änderst du auf host.html.
+// Feste Teams für den Team-Modus (3 Teams à 2 Personen, farblich unterschieden).
+const TEAM_DEFS = [
+  { name: 'Team Rot', color: '#e63946' },
+  { name: 'Team Blau', color: '#3a86ff' },
+  { name: 'Team Lila', color: '#8e44ad' }
+];
+
 let PLAYERS = [
   { id: 1, name: 'Niek', score: 0, team: '' },
   { id: 2, name: 'Basti', score: 0, team: '' },

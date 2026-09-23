@@ -26,6 +26,8 @@
 
   <div class="camrow" id="camrow"></div>
 
+  <div class="team-bubbles" id="team-bubbles"></div>
+
   <!-- Overlay/Modal existiert nur, damit board.js auf beiden Seiten funktioniert.
        Auf dieser Seite wird es nie geöffnet, da die Zellen nicht klickbar sind. -->
   <div class="overlay" id="overlay" hidden>
@@ -46,6 +48,7 @@
 <script src="webrtc.js"></script>
 <script src="board.js"></script>
 <script src="camrow.js"></script>
+<script src="team-bubbles.js"></script>
 <script>
   // Board rein zur Anzeige (nicht klickbar) — nur der Host löst Fragen aus.
   renderBoard(false);
@@ -71,6 +74,10 @@
   watchPlayers(players => {
     PLAYERS = players;
     renderCamRow(PLAYERS);
+    renderTeamBubbles(PLAYERS);
+  });
+  watchTeamMode(enabled => {
+    showTeamBubbles(enabled);
   });
 </script>
 </body>
