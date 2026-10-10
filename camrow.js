@@ -2,6 +2,7 @@
 
 const camrow = document.getElementById('camrow');
 const camTiles = {}; // playerId -> { tile, nameEl, scoreEl, videoEl, placeholder, camBtn, broadcasting }
+const HOST_ID = 'host'; // eigene Kachel für die Host-Kamera (kein Spieler, keine Punkte)
 
 function buildTile(p){
   const tile = document.createElement('div');
@@ -108,7 +109,7 @@ function setCamTeamMode(enabled){
 // landen nebeneinander in einem gemeinsamen, farbig umrandeten Container.
 // Wichtig: appendChild verschiebt nur das existierende Element, das Video/
 // die laufende Kamera-Übertragung wird dadurch NICHT unterbrochen.
-function arrangeCamTiles(players){
+function arrangePlayerTiles(players){
   lastPlayers = players;
 
   if (!camTeamModeOn) {
@@ -147,15 +148,41 @@ function arrangeCamTiles(players){
   });
 }
 
+// Die Host-Kachel sitzt in der Mitte der unteren Reihe — zwischen den Spieler-Kacheln bzw. Team-Gruppen.
+function placeHostTile(){
+  const host = camTiles[HOST_ID];
+  if (!host) return;
+  const others = Array.from(camrow.children).filter(c => c !== host.tile);
+  const idx = Math.ceil(others.length / 2);
+  if (idx >= others.length) camrow.appendChild(host.tile);
+  else camrow.insertBefore(host.tile, others[idx]);
+}
+
+function arrangeCamTiles(players){
+  arrangePlayerTiles(players);
+  placeHostTile();
+}
+
 function renderCamRow(players){
   const currentIds = new Set(players.map(p => String(p.id)));
 
   Object.keys(camTiles).forEach(id => {
+    if (id === HOST_ID) return;
     if (!currentIds.has(id)) {
       camTiles[id].tile.remove();
       delete camTiles[id];
     }
   });
+
+  if (!camTiles[HOST_ID]) {
+    const hostRef = buildTile({ id: HOST_ID, name: 'Host' });
+    hostRef.tile.classList.add('host-cam');
+    hostRef.nameEl.textContent = 'Host';
+    hostRef.teamEl.style.display = 'none';
+    hostRef.scoreEl.style.display = 'none';
+    camTiles[HOST_ID] = hostRef;
+    camrow.appendChild(hostRef.tile);
+  }
 
   players.forEach(p => {
     const id = String(p.id);

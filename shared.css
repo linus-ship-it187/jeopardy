@@ -541,3 +541,74 @@ h1{
   font-size:1.05rem;
   padding:8px 12px;
 }
+
+
+/* ---- Vollbild-Layout (index.html + host.html) ----
+   Oben: Fragen-Board über die ganze Breite. Unten: Kameras (Spieler/Teams + Host-Kamera in der Mitte). */
+body.fullscreen{
+  height:100vh;
+  overflow:hidden;
+  padding:1.2vh 1.2vw 1.4vh;
+  justify-content:flex-start;
+}
+body.fullscreen .header{ margin-bottom:0.4vh; flex:0 0 auto; }
+body.fullscreen h1{ font-size:clamp(1.6rem, 4.2vh, 3rem); }
+body.fullscreen .header svg{ width:clamp(16px, 2.6vh, 26px); height:clamp(16px, 2.6vh, 26px); }
+body.fullscreen .mode-tag{ margin:0 0 0.6vh; flex:0 0 auto; }
+body.fullscreen .board-title{ margin-bottom:0.6vh; flex:0 0 auto; font-size:clamp(0.9rem, 2vh, 1.3rem); max-width:none; }
+
+/* Rote Zone: Board füllt die ganze Breite und die restliche Höhe */
+body.fullscreen .board{
+  flex:1 1 0;
+  min-height:0;
+  width:100%;
+  max-width:none;
+  display:flex;
+  flex-direction:column;
+  padding:1.2vh 1vw;
+}
+body.fullscreen .grid{
+  flex:1;
+  min-height:0;
+  grid-template-rows:auto;
+  grid-auto-rows:minmax(0, 1fr);
+  gap:clamp(8px, 1.1vh, 16px) clamp(8px, 0.8vw, 16px);
+}
+body.fullscreen .category{
+  min-height:0;
+  padding:0 4px 0.6vh;
+  font-size:clamp(0.9rem, min(2.1vh, 1.25vw), 1.5rem);
+}
+body.fullscreen .cell{
+  padding:0;
+  font-size:clamp(1.2rem, min(4vh, 2.6vw), 3rem);
+}
+
+/* Grüne Zone: Kameras über die ganze Breite am unteren Rand */
+body.fullscreen .camrow{
+  flex:0 0 34vh;
+  display:flex;
+  gap:1vw;
+  width:100%;
+  max-width:none;
+  margin-top:1.2vh;
+}
+body.fullscreen .cam-tile{ flex:1 1 0; min-width:0; min-height:0; }
+body.fullscreen .cam-video-wrap{ flex:1 1 0; min-height:0; aspect-ratio:auto; }
+body.fullscreen .cam-footer{ flex:0 0 auto; }
+body.fullscreen .team-group{ flex:2 1 0; min-width:0; min-height:0; }
+body.fullscreen .team-group .cam-tile{ min-width:0; }
+
+/* Weiße Zone: Host-Kamera, etwas breiter, mit goldenem Rand */
+body.fullscreen .host-cam{
+  flex:1.4 1 0;
+  box-shadow: inset 0 0 0 3px var(--host-border);
+}
+
+/* Kleine Bildschirme / Handy: normales, scrollbares Layout */
+@media (max-width: 800px){
+  body.fullscreen{ height:auto; overflow:auto; }
+  body.fullscreen .camrow{ flex:0 0 auto; flex-wrap:wrap; }
+  body.fullscreen .cam-tile, body.fullscreen .team-group, body.fullscreen .host-cam{ flex:1 1 160px; }
+  body.fullscreen .cam-video-wrap{ aspect-ratio:4 / 3; }
+}
