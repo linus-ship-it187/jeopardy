@@ -29,17 +29,23 @@ function buildTile(p){
 
   const footer = document.createElement('div');
   footer.className = 'cam-footer';
+  const info = document.createElement('div');
+  info.className = 'cam-info';
   const nameEl = document.createElement('span');
   nameEl.className = 'cam-name';
+  const teamEl = document.createElement('span');
+  teamEl.className = 'cam-team';
+  info.appendChild(nameEl);
+  info.appendChild(teamEl);
   const scoreEl = document.createElement('span');
   scoreEl.className = 'cam-score';
-  footer.appendChild(nameEl);
+  footer.appendChild(info);
   footer.appendChild(scoreEl);
 
   tile.appendChild(videoWrap);
   tile.appendChild(footer);
 
-  const ref = { tile, nameEl, scoreEl, videoEl: video, placeholder, camBtn, broadcasting: false };
+  const ref = { tile, nameEl, teamEl, scoreEl, videoEl: video, placeholder, camBtn, broadcasting: false };
 
   camBtn.addEventListener('click', async () => {
     if (ref.broadcasting) {
@@ -157,7 +163,11 @@ function renderCamRow(players){
       camTiles[id] = buildTile(p);
       camrow.appendChild(camTiles[id].tile);
     }
-    camTiles[id].nameEl.textContent = p.team ? `${p.name} (${p.team})` : p.name;
+    camTiles[id].nameEl.textContent = p.name;
+    const teamDef = TEAM_DEFS.find(t => t.name === p.team);
+    camTiles[id].teamEl.textContent = p.team || '';
+    camTiles[id].teamEl.style.display = p.team ? 'block' : 'none';
+    camTiles[id].teamEl.style.color = teamDef ? teamDef.color : '';
     camTiles[id].scoreEl.textContent = p.score;
     camTiles[id].placeholder.textContent = p.name.charAt(0).toUpperCase();
   });

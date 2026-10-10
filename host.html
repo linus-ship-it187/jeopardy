@@ -29,10 +29,7 @@
 
   <details class="host-panel" open>
     <summary>Host-Steuerung – nur für dich</summary>
-    <div class="host-rows" id="host-rows"></div>
-    <button class="add-team" id="add-team">+ Person hinzufügen</button>
-    <br>
-    <button class="next-round-btn team-mode-btn" id="team-mode-btn">Team-Modus aktivieren</button>
+    <a class="next-round-btn link-btn" href="punkte.html" target="_blank">Punkte vergeben →</a>
     <br>
     <button class="next-round-btn back-round-btn" id="back-round-btn">← Zurück</button>
     <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
@@ -59,97 +56,6 @@
 <script src="board.js"></script>
 <script src="camrow.js"></script>
 <script>
-  let nextId = PLAYERS.length + 1;
-  const hostRows = document.getElementById('host-rows');
-
-  function renderHostRows(){
-    hostRows.innerHTML = '';
-    PLAYERS.forEach(p => {
-      const row = document.createElement('div');
-      row.className = 'host-row';
-
-      const nameInput = document.createElement('input');
-      nameInput.type = 'text';
-      nameInput.value = p.name;
-      nameInput.addEventListener('change', e => {
-        p.name = e.target.value;
-        savePlayers(PLAYERS);
-      });
-
-      const teamInput = document.createElement('select');
-      teamInput.style.width = '130px';
-      const noneOpt = document.createElement('option');
-      noneOpt.value = '';
-      noneOpt.textContent = 'Kein Team';
-      teamInput.appendChild(noneOpt);
-      TEAM_DEFS.forEach(teamDef => {
-        const opt = document.createElement('option');
-        opt.value = teamDef.name;
-        opt.textContent = teamDef.name;
-        teamInput.appendChild(opt);
-      });
-      teamInput.value = p.team || '';
-      teamInput.addEventListener('change', e => {
-        p.team = e.target.value;
-        savePlayers(PLAYERS);
-      });
-
-      const minus = document.createElement('button');
-      minus.className = 'score-btn';
-      minus.textContent = '−';
-      minus.addEventListener('click', () => { adjustScore(p, -100); });
-
-      const scoreVal = document.createElement('span');
-      scoreVal.className = 'host-score-value';
-      scoreVal.textContent = p.score;
-
-      const plus = document.createElement('button');
-      plus.className = 'score-btn';
-      plus.textContent = '+';
-      plus.addEventListener('click', () => { adjustScore(p, 100); });
-
-      const remove = document.createElement('button');
-      remove.className = 'remove-btn';
-      remove.textContent = 'Entfernen';
-      remove.addEventListener('click', () => {
-        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
-        savePlayers(PLAYERS);
-      });
-
-      row.appendChild(nameInput);
-      row.appendChild(teamInput);
-      row.appendChild(minus);
-      row.appendChild(scoreVal);
-      row.appendChild(plus);
-      row.appendChild(remove);
-      hostRows.appendChild(row);
-    });
-  }
-
-  // Ändert die Punktzahl eines Spielers um delta. Im Team-Modus wirkt das auf
-  // ALLE Spieler mit demselben (nicht-leeren) Team-Namen gleichzeitig.
-  function adjustScore(player, delta){
-    if (teamModeOn && player.team) {
-      PLAYERS.forEach(p => {
-        if (p.team === player.team) p.score += delta;
-      });
-    } else {
-      player.score += delta;
-    }
-    savePlayers(PLAYERS);
-  }
-
-  document.getElementById('add-team').addEventListener('click', () => {
-    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0, team: '' });
-    savePlayers(PLAYERS);
-  });
-
-  let teamModeOn = false;
-  const teamModeBtn = document.getElementById('team-mode-btn');
-  teamModeBtn.addEventListener('click', () => {
-    setTeamMode(!teamModeOn);
-  });
-
   document.getElementById('reset-btn').addEventListener('click', () => {
     if (confirm('Spiel wirklich zurücksetzen? Alle Punkte werden auf 0 gesetzt und das Board wird wieder leer.')) {
       resetGame(PLAYERS);
@@ -173,15 +79,12 @@
   // Board ist hier klickbar — der Host löst Fragen aus.
   renderBoard(true);
   renderCamRow(PLAYERS);
-  renderHostRows();
   seedPlayersIfEmpty();
 
   let lastUsedCells = {};
   watchPlayers(players => {
     PLAYERS = players;
-    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
     renderCamRow(PLAYERS);
-    renderHostRows();
   });
   watchUsedCells(cells => {
     lastUsedCells = cells;
@@ -205,9 +108,6 @@
     }
   });
   watchTeamMode(enabled => {
-    teamModeOn = enabled;
-    teamModeBtn.textContent = enabled ? 'Team-Modus deaktivieren' : 'Team-Modus aktivieren';
-    teamModeBtn.classList.toggle('active', enabled);
     setCamTeamMode(enabled);
   });
 </script>

@@ -293,8 +293,11 @@ h1{
   font-weight:700;
 }
 
-.cam-name{ font-size:1rem; }
-.cam-score{ font-size:1.15rem; color: var(--star); }
+.cam-footer{ gap:10px; padding:12px 14px; }
+.cam-info{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+.cam-name{ font-size:clamp(1.05rem, 1.3vw, 1.5rem); line-height:1.15; overflow-wrap:anywhere; }
+.cam-team{ font-size:clamp(0.8rem, 0.95vw, 1.05rem); font-weight:700; filter:brightness(1.35); }
+.cam-score{ font-size:clamp(1.3rem, 1.7vw, 2rem); color: var(--star); flex-shrink:0; }
 
 .team-group{
   display:flex;
@@ -472,4 +475,69 @@ h1{
 
 @media (prefers-reduced-motion: reduce){
   .cell{ transition:none; }
+}
+
+
+/* ---- Extra Punkte-Seite (punkte.html) ---- */
+.link-btn{
+  display:inline-block;
+  text-decoration:none;
+}
+
+.page-link{
+  color: var(--star);
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  text-decoration:none;
+  margin-bottom:18px;
+}
+.page-link:hover{ text-decoration:underline; }
+
+.points-page{
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+}
+
+.points-page .host-panel{
+  margin-top:0;
+  padding:24px;
+}
+
+.points-page .host-row{
+  gap:14px;
+  padding:6px 0;
+}
+
+.points-page .host-row input[type="text"],
+.points-page .host-row select{
+  font-size:1.05rem;
+  padding:10px 12px;
+}
+
+.points-page .host-row input[type="text"]{ width:200px; }
+.points-page .host-row select{ width:160px; }
+
+.points-page .score-btn{
+  width:48px;
+  height:48px;
+  font-size:1.5rem;
+}
+
+.points-page .host-score-value{
+  font-size:1.8rem;
+  min-width:90px;
+}
+
+.step-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:6px 0 18px;
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+}
+.step-row select{
+  font-size:1.05rem;
+  padding:8px 12px;
 }

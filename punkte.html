@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeopardy — Punkte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Punkte</h1>
+  </div>
+  <p class="mode-tag">HOST-ANSICHT — diesen Link nicht an die anderen Streamer weitergeben</p>
+
+  <div class="points-page">
+    <a class="page-link" href="host.html">← Zurück zum Board</a>
+
+    <div class="host-panel">
+      <div class="step-row">
+        <label for="step-select">Punkte pro Klick:</label>
+        <select id="step-select">
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="300">300</option>
+          <option value="400">400</option>
+          <option value="500">500</option>
+          <option value="600">600</option>
+          <option value="800">800</option>
+          <option value="1000">1000</option>
+        </select>
+      </div>
+
+      <div class="host-rows" id="host-rows"></div>
+
+      <button class="add-team" id="add-team">+ Person hinzufügen</button>
+      <br>
+      <button class="next-round-btn team-mode-btn" id="team-mode-btn">Team-Modus aktivieren</button>
+    </div>
+  </div>
+
+<script src="firebase-config.js"></script>
+<script src="game-data.js"></script>
+<script src="sync.js"></script>
+<script>
+  let nextId = PLAYERS.length + 1;
+  let teamModeOn = false;
+  let step = 100;
+  const hostRows = document.getElementById('host-rows');
+
+  document.getElementById('step-select').addEventListener('change', e => {
+    step = parseInt(e.target.value, 10);
+  });
+
+  function renderHostRows(){
+    hostRows.innerHTML = '';
+    PLAYERS.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'host-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = p.name;
+      nameInput.addEventListener('change', e => {
+        p.name = e.target.value;
+        savePlayers(PLAYERS);
+      });
+
+      const teamInput = document.createElement('select');
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = 'Kein Team';
+      teamInput.appendChild(noneOpt);
+      TEAM_DEFS.forEach(teamDef => {
+        const opt = document.createElement('option');
+        opt.value = teamDef.name;
+        opt.textContent = teamDef.name;
+        teamInput.appendChild(opt);
+      });
+      teamInput.value = p.team || '';
+      teamInput.addEventListener('change', e => {
+        p.team = e.target.value;
+        savePlayers(PLAYERS);
+      });
+
+      const minus = document.createElement('button');
+      minus.className = 'score-btn';
+      minus.textContent = '−';
+      minus.addEventListener('click', () => adjustScore(p, -step));
+
+      const scoreVal = document.createElement('span');
+      scoreVal.className = 'host-score-value';
+      scoreVal.textContent = p.score;
+
+      const plus = document.createElement('button');
+      plus.className = 'score-btn';
+      plus.textContent = '+';
+      plus.addEventListener('click', () => adjustScore(p, step));
+
+      const remove = document.createElement('button');
+      remove.className = 'remove-btn';
+      remove.textContent = 'Entfernen';
+      remove.addEventListener('click', () => {
+        PLAYERS = PLAYERS.filter(x => x.id !== p.id);
+        savePlayers(PLAYERS);
+      });
+
+      row.appendChild(nameInput);
+      row.appendChild(teamInput);
+      row.appendChild(minus);
+      row.appendChild(scoreVal);
+      row.appendChild(plus);
+      row.appendChild(remove);
+      hostRows.appendChild(row);
+    });
+  }
+
+  // Ändert die Punktzahl eines Spielers um delta. Im Team-Modus wirkt das auf
+  // ALLE Spieler mit demselben (nicht-leeren) Team-Namen gleichzeitig.
+  function adjustScore(player, delta){
+    if (teamModeOn && player.team) {
+      PLAYERS.forEach(p => {
+        if (p.team === player.team) p.score += delta;
+      });
+    } else {
+      player.score += delta;
+    }
+    savePlayers(PLAYERS);
+  }
+
+  document.getElementById('add-team').addEventListener('click', () => {
+    PLAYERS.push({ id: nextId++, name: `Spieler ${PLAYERS.length + 1}`, score: 0, team: '' });
+    savePlayers(PLAYERS);
+  });
+
+  const teamModeBtn = document.getElementById('team-mode-btn');
+  teamModeBtn.addEventListener('click', () => setTeamMode(!teamModeOn));
+
+  renderHostRows();
+  seedPlayersIfEmpty();
+
+  watchPlayers(players => {
+    PLAYERS = players;
+    nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
+    renderHostRows();
+  });
+  watchTeamMode(enabled => {
+    teamModeOn = enabled;
+    teamModeBtn.textContent = enabled ? 'Team-Modus deaktivieren' : 'Team-Modus aktivieren';
+    teamModeBtn.classList.toggle('active', enabled);
+  });
+</script>
+</body>
+</html>
