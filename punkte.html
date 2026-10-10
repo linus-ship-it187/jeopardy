@@ -42,6 +42,17 @@
       <br>
       <button class="next-round-btn team-mode-btn" id="team-mode-btn">Team-Modus aktivieren</button>
     </div>
+
+    <div class="host-panel" style="margin-top:20px">
+      <div class="step-row" style="margin-bottom:12px">
+        <span>Aktuelle Runde:</span>
+        <strong id="round-name">Runde 1</strong>
+      </div>
+      <button class="next-round-btn back-round-btn" id="back-round-btn">← Zurück</button>
+      <button class="next-round-btn" id="next-round-btn">x2 — Nächste Runde starten</button>
+      <br>
+      <button class="next-round-btn reset-btn" id="reset-btn">↺ Spiel zurücksetzen</button>
+    </div>
   </div>
 
 <script src="firebase-config.js"></script>
@@ -141,6 +152,21 @@
   const teamModeBtn = document.getElementById('team-mode-btn');
   teamModeBtn.addEventListener('click', () => setTeamMode(!teamModeOn));
 
+  const nextRoundBtn = document.getElementById('next-round-btn');
+  const backRoundBtn = document.getElementById('back-round-btn');
+  let boardIndex = 0;
+  nextRoundBtn.addEventListener('click', () => {
+    if (boardIndex < BOARDS.length - 1) setCurrentBoard(boardIndex + 1);
+  });
+  backRoundBtn.addEventListener('click', () => {
+    if (boardIndex > 0) setCurrentBoard(boardIndex - 1);
+  });
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (confirm('Spiel wirklich zurücksetzen? Alle Punkte werden auf 0 gesetzt und das Board wird wieder leer.')) {
+      resetGame(PLAYERS);
+    }
+  });
+
   renderHostRows();
   seedPlayersIfEmpty();
 
@@ -148,6 +174,15 @@
     PLAYERS = players;
     nextId = Math.max(0, ...PLAYERS.map(p => p.id)) + 1;
     renderHostRows();
+  });
+  watchCurrentBoard(idx => {
+    boardIndex = idx;
+    document.getElementById('round-name').textContent = BOARDS[idx].name;
+    nextRoundBtn.disabled = idx >= BOARDS.length - 1;
+    nextRoundBtn.textContent = idx >= BOARDS.length - 1
+      ? 'Letzte Runde erreicht'
+      : `x2 — ${BOARDS[idx + 1].name} starten`;
+    backRoundBtn.disabled = idx <= 0;
   });
   watchTeamMode(enabled => {
     teamModeOn = enabled;
