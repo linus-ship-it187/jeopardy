@@ -30,7 +30,7 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  padding:32px 16px 64px;
+  padding:20px 2vw 40px;
 }
 
 .header{
@@ -64,7 +64,7 @@ h1{
 
 .board-title{
   width:100%;
-  max-width:1080px;
+  max-width:none;
   text-align:center;
   font-family:'Baloo 2', sans-serif;
   font-weight:700;
@@ -120,7 +120,7 @@ h1{
 
 .team-bubbles{
   width:100%;
-  max-width:1080px;
+  max-width:none;
   margin-top:20px;
   display:none;
   justify-content:center;
@@ -163,7 +163,7 @@ h1{
 
 .board{
   width:100%;
-  max-width:1080px;
+  max-width:none;
   background: var(--panel);
   background-image: radial-gradient(var(--panel-dot) 1.5px, transparent 1.5px);
   background-size: 18px 18px;
@@ -175,13 +175,13 @@ h1{
 .grid{
   display:grid;
   grid-template-columns: repeat(var(--cols, 5), 1fr);
-  gap:12px;
+  gap:clamp(12px, 1vw, 22px);
 }
 
 .category{
   font-family:'Baloo 2', sans-serif;
   font-weight:700;
-  font-size:0.98rem;
+  font-size:clamp(0.98rem, 1.3vw, 1.6rem);
   text-align:center;
   line-height:1.25;
   padding:6px 4px 14px;
@@ -198,8 +198,8 @@ h1{
   color:var(--white);
   font-family:'Baloo 2', sans-serif;
   font-weight:700;
-  font-size:1.5rem;
-  padding:18px 0;
+  font-size:clamp(1.5rem, 2.4vw, 2.8rem);
+  padding:clamp(18px, 3.4vh, 44px) 0;
   cursor:pointer;
   box-shadow: 0 4px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
   transition: transform 0.12s ease, background 0.12s ease;
@@ -229,7 +229,7 @@ h1{
 
 .camrow{
   width:100%;
-  max-width:1080px;
+  max-width:none;
   margin-top:24px;
   display:grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -311,7 +311,7 @@ h1{
 
 .host-panel{
   width:100%;
-  max-width:1080px;
+  max-width:none;
   margin-top:30px;
   background: var(--host-bg);
   border:2px dashed var(--host-border);
