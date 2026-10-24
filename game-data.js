@@ -1,109 +1,100 @@
 // ---- Hier die eigenen Kategorien & Fragen eintragen ----
+// Optional pro Frage: img: 'bilder/datei.png' (eigene Datei im Repo) oder img: 'https://…' (Link) — wird im Frage-Fenster mit angezeigt.
 
 // Runde 1 (normale Punkte)
 const ROUND1_CATEGORIES = [
   {
-    category: "Zurück in die Schule",
+    category: "Flaggen",
     questions: {
-      100: { q: "In welchem Fach dreht sich alles um Zahlen und Gleichungen?", a: "Mathematik" },
-      200: { q: "Wie heißt das Gebäude, in dem der Unterricht stattfindet?", a: "Schule" },
-      300: { q: "Wie nennt man die Pause zwischen den Schulstunden?", a: "Hofpause" },
-      400: { q: "Wie heißt das Zeugnis am Ende eines Schuljahres?", a: "Abschlusszeugnis" },
-      500: { q: "Wie nennt man den ersten Schultag nach den Sommerferien?", a: "Einschulung / Schulstart" }
+      100: { q: "Welches Land hat diese Flagge?", a: "Frankreich", img: "https://flagcdn.com/w640/fr.png" },
+      200: { q: "Welches Land hat diese Flagge?", a: "Brasilien", img: "https://flagcdn.com/w640/br.png" },
+      300: { q: "Welches Land hat diese Flagge?", a: "Südkorea", img: "https://flagcdn.com/w640/kr.png" },
+      400: { q: "Welches Land hat diese Flagge?", a: "Bolivien", img: "https://flagcdn.com/w640/bo.png" },
+      500: { q: "Welches Land hat diese Flagge?", a: "Tschad (sieht fast aus wie die Flagge von Rumänien)", img: "https://flagcdn.com/w640/td.png" }
     }
   },
   {
-    category: "Da fragt man sich...",
+    category: "Sehenswürdigkeiten",
     questions: {
-      100: { q: "Warum ist der Himmel blau?", a: "Rayleigh-Streuung des Sonnenlichts" },
-      200: { q: "Warum gähnen wir, wenn andere gähnen?", a: "Ansteckendes Gähnen / Empathie" },
-      300: { q: "Warum schmecken manche Dinge nach dem Zähneputzen komisch?", a: "Natriumlaurylsulfat in Zahnpasta" },
-      400: { q: "Warum knackt man mit den Fingern?", a: "Gasblasen im Gelenk platzen" },
-      500: { q: "Warum bekommt man manchmal ein Déjà-vu?", a: "Kurzschluss der Gedächtnisverarbeitung im Gehirn" }
+      100: { q: "Welche Sehenswürdigkeit ist das? Ein eiserner Turm mitten in Paris, rund 330 Meter hoch.", a: "Eiffelturm" },
+      200: { q: "Welche Sehenswürdigkeit ist das? Ein riesiges antikes Amphitheater in Rom, in dem früher Gladiatoren kämpften.", a: "Kolosseum" },
+      300: { q: "Welche Sehenswürdigkeit ist das? Ein weißes Marmor-Mausoleum in Indien, das ein Herrscher für seine verstorbene Frau bauen ließ.", a: "Taj Mahal" },
+      400: { q: "Welche Sehenswürdigkeit ist das? Eine antike Felsenstadt in Jordanien, die von den Nabatäern in den Fels gehauen wurde (bekannt aus Indiana Jones).", a: "Petra" },
+      500: { q: "Welche Sehenswürdigkeit ist das? Der größte Tempelkomplex der Welt, in Kambodscha.", a: "Angkor Wat" }
+    }
+  },
+  {
+    category: "Minecraft",
+    questions: {
+      100: { q: "Welcher Block ist das? Er kommt im Nether vor, leuchtet gelb-orange und lässt beim Abbauen Staub fallen.", a: "Glowstone (Leuchtstein)" },
+      200: { q: "Was wurde bei Minecraft Live angekündigt?", a: "das sift" },
+      300: { q: "Welche drei Gegenstände brauchst du, um einen Enderkristall herzustellen?", a: "Glas, Enderauge, Ghast-Träne" },
+      400: { q: "Wie viele Obsidianblöcke brauchst du mindestens für ein Netherportal, wenn du die Ecken weglässt?", a: "10 Obsidianblöcke" },
+      500: { q: "Wie viele verschiedene Verzauberungen kann eine Armbrust in Minecraft gleichzeitig haben, wenn man inkompatible Verzauberungen ausschließt?", a: "3 Verzauberungen" }
     }
   },
   {
     category: "Von wem stammt der YouTube-Titel?",
     questions: {
-      100: { q: "'Mein erster Tag als...'", a: "Beispiel-Creator eintragen" },
-      200: { q: "'Ich habe 24 Stunden lang...'", a: "Beispiel-Creator eintragen" },
-      300: { q: "'Was passiert wenn...'", a: "Beispiel-Creator eintragen" },
-      400: { q: "'Der teuerste...'", a: "Beispiel-Creator eintragen" },
-      500: { q: "'Wir haben es endlich geschafft'", a: "Beispiel-Creator eintragen" }
+      100: { q: "„Basti überrascht mich in Craft Attack!“", a: "PapaPlatte" },
+      200: { q: "„BEST OF ZOOM TROLLING 😂“", a: "Gleggmire" },
+      300: { q: "„Ich ROASTE eure PEINLICHEN Zimmer...“", a: "LetsHugo" },
+      400: { q: "„Wir öffnen eine MYSTERIÖSE LAGERHALLE! HISTORISCHE FUNDE und UNGEÖFFNETE AMAZON PAKETE 📦“", a: "Zarbex" },
+      500: { q: "„die ganze Base besteht aus Shade Lucky Blocks.. Minecraft LUCKY BLOCK BEDWARS“", a: "Alphastein" }
     }
   },
   {
-    category: "Vom Lyrics zum Songtitel",
+    category: "Zahlen",
     questions: {
-      100: { q: "'Atemlos durch die Nacht'", a: "Atemlos" },
-      200: { q: "'Ein Kompliment'", a: "Ein Kompliment" },
-      300: { q: "'99 Luftballons'", a: "99 Luftballons" },
-      400: { q: "'Er gehört zu mir'", a: "Er gehört zu mir" },
-      500: { q: "'Auf uns'", a: "Auf uns" }
-    }
-  },
-  {
-    category: "Wofür steht die Abkürzung?",
-    questions: {
-      100: { q: "LOL", a: "Laughing Out Loud" },
-      200: { q: "AFK", a: "Away From Keyboard" },
-      300: { q: "GG", a: "Good Game" },
-      400: { q: "NPC", a: "Non-Player Character" },
-      500: { q: "IRL", a: "In Real Life" }
+      100: { q: "Wie viele Sekunden hat eine Stunde?", a: "3600 Sekunden" },
+      200: { q: "Ein Zug hat 8 Waggons. In jedem Waggon sitzen 24 Personen. Wie viele Personen sind es insgesamt?", a: "192 Personen" },
+      300: { q: "Welche Zahl fehlt? 3, 8, 15, 24, 35, __ ?", a: "48" },
+      400: { q: "Ein Vater ist 36 Jahre alt und sein Sohn 12 Jahre. In wie vielen Jahren ist der Vater doppelt so alt wie sein Sohn?", a: "12 Jahre" },
+      500: { q: "Du hast 100 €. Du kaufst 3 Bücher für je 12 € und 2 Spiele für je 17 €. Wie viel Geld bleibt übrig?", a: "30 €" }
     }
   }
 ];
 
-// Runde 2 (x2 — doppelte Punkte). Kategorien/Fragen hier eigene eintragen.
+// Runde 2 (x2 — doppelte Punkte)
 const ROUND2_CATEGORIES = [
   {
-    category: "Kategorie 1",
+    category: "Promis",
     questions: {
-      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
-      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
-      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
-      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
-      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+      200: { q: "Wie alt ist Taylor Swift?", a: "36 Jahre" },
+      400: { q: "Wie viele Mitglieder hat die K-Pop-Gruppe BTS?", a: "7 Mitglieder" },
+      600: { q: "In welchem Jahr wurde Cristiano Ronaldo geboren?", a: "1985" },
+      800: { q: "Wie viele Oscars hat Leonardo DiCaprio bisher gewonnen?", a: "1 Oscar" },
+      1000: { q: "In welchem Jahr wurde Michael Jackson geboren?", a: "1958" }
     }
   },
   {
-    category: "Kategorie 2",
+    category: "Twitch Emotes",
     questions: {
-      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
-      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
-      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
-      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
-      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+      200: { q: "Wie heißt dieses 7TV-Emote?", a: "catJAM", img: "bilder/catjam.gif" },
+      400: { q: "Wie heißt dieses 7TV-Emote?", a: "Clueless", img: "bilder/clueless.png" },
+      600: { q: "Wie heißt dieses 7TV-Emote?", a: "peepoBye", img: "bilder/peepobye.gif" },
+      800: { q: "Wie heißt dieses 7TV-Emote?", a: "danse", img: "bilder/danse.gif" },
+      1000: { q: "Wie heißt dieses 7TV-Emote?", a: "Listening", img: "bilder/listening.gif" }
     }
   },
   {
-    category: "Kategorie 3",
+    category: "Deutschland",
     questions: {
-      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
-      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
-      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
-      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
-      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+      200: { q: "Wie viele Bundesländer hat Deutschland?", a: "16" },
+      400: { q: "In welchem Jahr fiel die Berliner Mauer?", a: "1989" },
+      600: { q: "Wie viele Einwohner hat Deutschland ungefähr? (in Millionen)", a: "84 Millionen" },
+      800: { q: "In welchem Jahr wurde Deutschland Fußball-Weltmeister bei der Männer-WM in Brasilien?", a: "2014" },
+      1000: { q: "Wie viele Stufen hat die Treppe zum Deutschen Bundestag im Reichstagsgebäude?", a: "230 Stufen" }
     }
   },
   {
-    category: "Kategorie 4",
+    category: "Abkürzungen",
     questions: {
-      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
-      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
-      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
-      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
-      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
-    }
-  },
-  {
-    category: "Kategorie 5",
-    questions: {
-      200: { q: "Platzhalter-Frage 200", a: "Platzhalter-Antwort" },
-      400: { q: "Platzhalter-Frage 400", a: "Platzhalter-Antwort" },
-      600: { q: "Platzhalter-Frage 600", a: "Platzhalter-Antwort" },
-      800: { q: "Platzhalter-Frage 800", a: "Platzhalter-Antwort" },
-      1000: { q: "Platzhalter-Frage 1000", a: "Platzhalter-Antwort" }
+      200: { q: "Wofür steht GmbH?", a: "Gesellschaft mit beschränkter Haftung" },
+      400: { q: "Wofür steht BIP?", a: "Bruttoinlandsprodukt" },
+      600: { q: "Wofür steht NATO?", a: "North Atlantic Treaty Organization" },
+      800: { q: "Wofür steht HTTP?", a: "Hypertext Transfer Protocol" },
+      1000: { q: "Wofür steht DNA?", a: "Desoxyribonukleinsäure" }
     }
   }
 ];

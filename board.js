@@ -64,6 +64,7 @@ function applyUsedCells(usedCells){
 const overlay = document.getElementById('overlay');
 const modalMeta = document.getElementById('modal-meta');
 const modalQuestion = document.getElementById('modal-question');
+const modalImage = document.getElementById('modal-image');
 const modalAnswer = document.getElementById('modal-answer');
 const revealBtn = document.getElementById('reveal-btn');
 const closeBtn = document.getElementById('close-btn');
@@ -85,6 +86,17 @@ function displayQuestion(data){
 
   modalMeta.textContent = `${cat.category} — ${data.value}`;
   modalQuestion.textContent = item.q;
+  // Optionales Bild zur Frage (z. B. Flagge, Emote): in game-data.js als img: 'pfad-oder-link' eintragen
+  if (modalImage) {
+    if (item.img) {
+      modalImage.src = item.img;
+      modalImage.alt = '';
+      modalImage.hidden = false;
+    } else {
+      modalImage.removeAttribute('src');
+      modalImage.hidden = true;
+    }
+  }
   modalAnswer.textContent = item.a;
   modalAnswer.hidden = !data.revealed;
   overlay.hidden = false;
