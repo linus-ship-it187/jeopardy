@@ -16,7 +16,7 @@ const ROUND1_CATEGORIES = [
   {
     category: "Sehenswürdigkeiten",
     questions: {
-      100: { q: "Welche Sehenswürdigkeit ist das?", a: "Eiffelturm", img: "wiki:Eiffel_Tower" },
+      100: { q: "Welche Sehenswürdigkeit ist das?", a: "Eiffelturm", img: "eiffelturm.jpg" },
       200: { q: "Welche Sehenswürdigkeit ist das?", a: "Kolosseum", img: "wiki:Colosseum" },
       300: { q: "Welche Sehenswürdigkeit ist das?", a: "Taj Mahal", img: "wiki:Taj_Mahal" },
       400: { q: "Welche Sehenswürdigkeit ist das?", a: "Petra", img: "wiki:Petra" },
