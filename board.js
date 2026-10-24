@@ -71,6 +71,81 @@ const closeBtn = document.getElementById('close-btn');
 
 let openBtn = null; // Board-Zelle, die gerade offen ist (nur beim Host relevant, zum Ausgrauen beim Schließen)
 
+// ---- Bild zur Frage ----
+// In game-data.js pro Frage: img: 'datei.png' (liegt im Repo), img: 'https://…' (Link)
+// oder img: 'wiki:Seitenname' (Titelbild des englischen Wikipedia-Artikels, z. B. 'wiki:Eiffel_Tower').
+const imgCache = {}; // img-Angabe -> { primary, fallback }
+
+async function resolveImage(spec){
+  if (imgCache[spec]) return imgCache[spec];
+  let result;
+  if (spec.startsWith('wiki:')) {
+    const title = spec.slice(5);
+    const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title));
+    if (!r.ok) throw new Error('Wikipedia-Abfrage fehlgeschlagen (' + r.status + ')');
+    const d = await r.json();
+    const thumb = d.thumbnail && d.thumbnail.source;
+    const orig = d.originalimage && d.originalimage.source;
+    if (!thumb && !orig) throw new Error('Kein Bild gefunden für ' + title);
+    // größere Vorschau (960px); falls die nicht lädt, greift die kleine bzw. das Original
+    result = thumb
+      ? { primary: thumb.replace(/\/\d+px-/, '/960px-'), fallback: thumb }
+      : { primary: orig, fallback: orig };
+  } else {
+    result = { primary: spec, fallback: spec };
+  }
+  imgCache[spec] = result;
+  return result;
+}
+
+function setModalImage(spec){
+  if (!modalImage) return;
+  if (!spec) {
+    delete modalImage.dataset.spec;
+    modalImage.removeAttribute('src');
+    modalImage.hidden = true;
+    return;
+  }
+  modalImage.hidden = false;
+
+  // Gleiche Frage nochmal (z. B. beim Antwort-Zeigen): Bild nicht neu laden.
+  if (modalImage.dataset.spec === spec && modalImage.getAttribute('src')) return;
+
+  modalImage.dataset.spec = spec;
+
+  // Normale Datei oder Link: sofort anzeigen, ohne Umweg.
+  if (!spec.startsWith('wiki:')) {
+    modalImage.dataset.fallback = spec;
+    modalImage.alt = '';
+    modalImage.src = spec;
+    return;
+  }
+
+  modalImage.alt = 'Bild wird geladen …';
+  modalImage.removeAttribute('src');
+
+  resolveImage(spec).then(res => {
+    if (modalImage.dataset.spec !== spec) return; // inzwischen andere Frage offen
+    modalImage.dataset.fallback = res.fallback;
+    modalImage.src = res.primary;
+  }).catch(err => {
+    console.error('[Bild]', err);
+    if (modalImage.dataset.spec === spec) modalImage.alt = '⚠ Bild konnte nicht geladen werden';
+  });
+}
+
+if (modalImage) {
+  modalImage.addEventListener('error', () => {
+    const fb = modalImage.dataset.fallback;
+    const current = modalImage.getAttribute('src');
+    if (fb && current && current !== fb) {
+      modalImage.src = fb;           // zweiter Versuch mit der kleineren Version
+    } else {
+      modalImage.alt = '⚠ Bild nicht gefunden: ' + (current || '');
+    }
+  });
+}
+
 // Host: Klick auf eine Zelle öffnet die Frage — für ALLE sichtbar, über Firebase.
 function openQuestion(cat, catIndex, value, btn){
   openBtn = btn;
@@ -86,17 +161,7 @@ function displayQuestion(data){
 
   modalMeta.textContent = `${cat.category} — ${data.value}`;
   modalQuestion.textContent = item.q;
-  // Optionales Bild zur Frage (z. B. Flagge, Emote): in game-data.js als img: 'pfad-oder-link' eintragen
-  if (modalImage) {
-    if (item.img) {
-      modalImage.src = item.img;
-      modalImage.alt = '';
-      modalImage.hidden = false;
-    } else {
-      modalImage.removeAttribute('src');
-      modalImage.hidden = true;
-    }
-  }
+  setModalImage(item.img);
   modalAnswer.textContent = item.a;
   modalAnswer.hidden = !data.revealed;
   overlay.hidden = false;

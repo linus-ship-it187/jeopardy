@@ -16,11 +16,11 @@ const ROUND1_CATEGORIES = [
   {
     category: "Sehenswürdigkeiten",
     questions: {
-      100: { q: "Welche Sehenswürdigkeit ist das? Ein eiserner Turm mitten in Paris, rund 330 Meter hoch.", a: "Eiffelturm" },
-      200: { q: "Welche Sehenswürdigkeit ist das? Ein riesiges antikes Amphitheater in Rom, in dem früher Gladiatoren kämpften.", a: "Kolosseum" },
-      300: { q: "Welche Sehenswürdigkeit ist das? Ein weißes Marmor-Mausoleum in Indien, das ein Herrscher für seine verstorbene Frau bauen ließ.", a: "Taj Mahal" },
-      400: { q: "Welche Sehenswürdigkeit ist das? Eine antike Felsenstadt in Jordanien, die von den Nabatäern in den Fels gehauen wurde (bekannt aus Indiana Jones).", a: "Petra" },
-      500: { q: "Welche Sehenswürdigkeit ist das? Der größte Tempelkomplex der Welt, in Kambodscha.", a: "Angkor Wat" }
+      100: { q: "Welche Sehenswürdigkeit ist das?", a: "Eiffelturm", img: "wiki:Eiffel_Tower" },
+      200: { q: "Welche Sehenswürdigkeit ist das?", a: "Kolosseum", img: "wiki:Colosseum" },
+      300: { q: "Welche Sehenswürdigkeit ist das?", a: "Taj Mahal", img: "wiki:Taj_Mahal" },
+      400: { q: "Welche Sehenswürdigkeit ist das?", a: "Petra", img: "wiki:Petra" },
+      500: { q: "Welche Sehenswürdigkeit ist das?", a: "Angkor Wat", img: "wiki:Angkor_Wat" }
     }
   },
   {
@@ -70,11 +70,11 @@ const ROUND2_CATEGORIES = [
   {
     category: "Twitch Emotes",
     questions: {
-      200: { q: "Wie heißt dieses 7TV-Emote?", a: "catJAM", img: "bilder/catjam.gif" },
-      400: { q: "Wie heißt dieses 7TV-Emote?", a: "Clueless", img: "bilder/clueless.png" },
-      600: { q: "Wie heißt dieses 7TV-Emote?", a: "peepoBye", img: "bilder/peepobye.gif" },
-      800: { q: "Wie heißt dieses 7TV-Emote?", a: "danse", img: "bilder/danse.gif" },
-      1000: { q: "Wie heißt dieses 7TV-Emote?", a: "Listening", img: "bilder/listening.gif" }
+      200: { q: "Wie heißt dieses 7TV-Emote?", a: "catJAM", img: "catjam.gif" },
+      400: { q: "Wie heißt dieses 7TV-Emote?", a: "Clueless", img: "clueless.png" },
+      600: { q: "Wie heißt dieses 7TV-Emote?", a: "peepoBye", img: "peepobye.gif" },
+      800: { q: "Wie heißt dieses 7TV-Emote?", a: "danse", img: "danse.gif" },
+      1000: { q: "Wie heißt dieses 7TV-Emote?", a: "Listening", img: "listening.gif" }
     }
   },
   {
@@ -95,6 +95,16 @@ const ROUND2_CATEGORIES = [
       600: { q: "Wofür steht NATO?", a: "North Atlantic Treaty Organization" },
       800: { q: "Wofür steht HTTP?", a: "Hypertext Transfer Protocol" },
       1000: { q: "Wofür steht DNA?", a: "Desoxyribonukleinsäure" }
+    }
+  },
+  {
+    category: "Flixo",
+    questions: {
+      200: { q: "Wie heißt Flixo?", a: "Felix" },
+      400: { q: "Nenn 1 VIP auf Flixos Channel (kein Streamer).", a: "Eine davon reicht: alwk_magda, ani__2007, bannanen_peter, borniop, dystopiaflame, emma_16_cl, erbauer95, gamerdon2, gwalextv, helotelo16, kailikesc00kies, lea_keinbock, leo_mxxm, lisadiesock, mama_flixo, proxer109, snayxxxx, texmex2363, veifex, vibezznyn, wh0s_henri, zpexpe, zpudd1ng" },
+      600: { q: "Wann hat Flixo angefangen zu streamen? (Monat)", a: "März 2025" },
+      800: { q: "Wann hat Flixo Geburtstag?", a: "9. November 2010" },
+      1000: { q: "Wie heißt Flixos Schwester?", a: "Ronja" }
     }
   }
 ];
