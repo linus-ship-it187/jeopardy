@@ -71,10 +71,10 @@ const ROUND2_CATEGORIES = [
     category: "Twitch Emotes",
     questions: {
       200: { q: "Wie heißt dieses 7TV-Emote?", a: "catJAM", img: "catjam.gif" },
-      400: { q: "Wie heißt dieses 7TV-Emote?", a: "Clueless", img: "clueless.png" },
+      400: { q: "Wie heißt dieses 7TV-Emote?", a: "Listening", img: "listening.gif" }
       600: { q: "Wie heißt dieses 7TV-Emote?", a: "peepoBye", img: "peepobye.gif" },
       800: { q: "Wie heißt dieses 7TV-Emote?", a: "danse", img: "danse.gif" },
-      1000: { q: "Wie heißt dieses 7TV-Emote?", a: "Listening", img: "listening.gif" }
+      1000: { q: "Wie heißt dieses 7TV-Emote?", a: "Clueless", img: "clueless.png" },
     }
   },
   {
